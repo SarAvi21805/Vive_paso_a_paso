@@ -8,5 +8,16 @@
     <string name="create_account">Crear Cuenta</string>
     <string name="forgot_password">¿Olvidaste tu contraseña?</string>
 
+    <!-- Dashboard Screen -->
+    <string name="greeting">¡Hola, %1$s!</string>
+    <string name="daily_tip_title">Tip del día:</string>
+    <string name="daily_tip_content">Recuerda estirar las piernas cada hora.</string>
+    <string name="hydration">Hidratación</string>
+    <string name="sleep">Sueño</string>
+    <string name="steps">Pasos</string>
+    <string name="nutrition">Alimentación</string>
+    <string name="dashboard_nav">Dashboard</string>
+    <string name="stats_nav">Estadísticas</string>
+    <string name="profile_nav">Perfil</string>
 
 </resources>
