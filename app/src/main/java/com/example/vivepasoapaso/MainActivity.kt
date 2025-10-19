@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.vivepasoapaso.ui.screens.dashboard.DashboardScreen
 import com.example.vivepasoapaso.ui.screens.login.LoginScreen
+import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,8 +27,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) { // Pantallas para visualizar
-                    LoginScreen()
-                    DashboardScreen()
+                    //LoginScreen()
+                    //DashboardScreen()
+                    RegisterHabitScreen()
                 }
             }
         }
