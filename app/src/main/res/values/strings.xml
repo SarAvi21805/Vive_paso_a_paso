@@ -20,4 +20,14 @@
     <string name="stats_nav">Estadísticas</string>
     <string name="profile_nav">Perfil</string>
 
+    <!-- Register Habit Screen -->
+    <string name="register_habit_title">Registrar Hábito</string>
+    <string name="date_label">Fecha: Hoy, 6 de Septiembre</string>
+    <string name="water">Agua</string>
+    <string name="exercise">Ejercicio</string>
+    <string name="minutes_of_exercise">Minutos de ejercicio</string>
+    <string name="notes_optional">Notas (opcional)</string>
+    <string name="save_button">Guardar</string>
+    <string name="cancel_button">Cancelar</string>
+
 </resources>
