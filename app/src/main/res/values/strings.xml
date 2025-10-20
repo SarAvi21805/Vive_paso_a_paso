@@ -31,12 +31,14 @@
     <string name="preferences">Preferencias</string>
     <string name="notifications">Notificaciones</string>
     <string name="personalize_goals">Personalizar metas</string>
+    <string name="lenguage">Idioma</string>
     <string name="account_and_security">Cuenta y Seguridad</string>
     <string name="change_password">Cambiar contraseña</string>
     <string name="privacy_policy">Privacidad de datos</string>
     <string name="send_feedback">Enviar comentarios</string>
     <string name="help_and_faq">Ayuda y FAQ</string>
     <string name="logout">Cerrar Sesión</string>
+
     <!-- Register Habit Screen -->
     <string name="register_habit_title">Registrar Hábito</string>
     <string name="date_label">Fecha: Hoy, 6 de Septiembre</string>
