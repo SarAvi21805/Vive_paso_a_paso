@@ -17,30 +17,35 @@ class ChatRepositoryImpl : ChatRepository {
         if (apiKey.isBlank() || apiKey == "null") {
             Log.e("Health_AI", "API Key no configurada")
             return Message(
-                text = "Error: API Key no configurada. Configura tu API key de OpenAI en local.properties",
+                text = "Configura tu API key de OpenAI en local.properties",
                 isFromUser = false
             )
         }
+
+        Log.d("Health_AI", "API Key cargada correctamente")
 
         val request = ChatRequest(
             model = "gpt-3.5-turbo",
             messages = listOf(
                 MessageDto(
                     role = "system",
-                    content = "Eres un asistente de salud y bienestar especializado en hábitos saludables. Proporciona recomendaciones breves, prácticas y motivadoras basadas en datos de sueño, ejercicio, hidratación y nutrición. Sé positivo y alentador."
+                    content = "Eres un asistente de salud y bienestar especializado en hábitos saludables. Proporciona recomendaciones breves, prácticas y motivadoras basadas en datos de sueño, ejercicio, hidratación y nutrición. Sé positivo y alentador. Responde siempre en español."
                 ),
                 MessageDto(role = "user", content = userMessage)
             )
         )
 
         return try {
+            Log.d("Health_AI", "Realizando llamada a la API...")
             val response = apiService.getChatCompletions(request)
-            val aiMessage = response.choices.firstOrNull()?.message?.content
-                ?: "No pude generar una recomendación en este momento."
+            Log.d("Health_AI", "Respuesta recibida exitosamente")
 
-            Message(text = aiMessage, isFromUser = false)
+            val aiMessageContent = response.choices.firstOrNull()?.message?.content
+                ?: "No pude generar una recomendación en este momento. Intenta nuevamente."
+
+            Message(text = aiMessageContent, isFromUser = false)
         } catch (e: Exception) {
-            Log.e("Health_AI", "Error: ${e.message}", e)
+            Log.e("Health_AI", "Error en la llamada a la API: ${e.message}", e)
             Message(
                 text = "Error de conexión. Verifica tu internet e intenta nuevamente.",
                 isFromUser = false

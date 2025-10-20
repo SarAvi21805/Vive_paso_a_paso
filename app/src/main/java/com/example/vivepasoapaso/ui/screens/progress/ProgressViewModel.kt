@@ -47,7 +47,8 @@ class ProgressViewModel : ViewModel() {
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     error = "Error al obtener recomendación: ${e.message}",
-                    isLoading = false
+                    isLoading = false,
+                    aiRecommendation = "No se pudo conectar con el servicio de IA. Verifica tu conexión a internet."
                 )
             }
         }
@@ -56,6 +57,7 @@ class ProgressViewModel : ViewModel() {
     private fun buildUserStatsPrompt(): String {
         val state = _state.value
         return """
+            Eres un asistente de salud y bienestar llamado "Vita". 
             Usuario con los siguientes hábitos semanales:
             - Sueño: ${state.sleepHours} horas promedio
             - Pasos: ${state.steps} pasos diarios
@@ -63,7 +65,7 @@ class ProgressViewModel : ViewModel() {
             - Ejercicio: ${state.exerciseMinutes} minutos diarios
             
             Proporciona una recomendación personalizada breve (máximo 2 oraciones) para mejorar su bienestar. 
-            Sé específico y sugiere un hábito pequeño y alcanzable.
+            Sé específico, motivador y sugiere un hábito pequeño y alcanzable. Responde en español.
         """.trimIndent()
     }
 }

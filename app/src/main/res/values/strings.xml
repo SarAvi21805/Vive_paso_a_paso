@@ -1,14 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Strings existentes -->
     <string name="app_name">Vive Paso a Paso</string>
     <string name="login_button">Iniciar Sesión</string>
-    <string name="create_account">Crear Cuenta</string>
-    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="email_placeholder">Email</string>
     <string name="password_placeholder">Contraseña</string>
+    <string name="create_account">Crear Cuenta</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="greeting">¡Hola, %s!</string>
-    <string name="daily_tip_title">Tip del día:</string>
+    <string name="daily_tip_title">Tip del día</string>
     <string name="daily_tip_content">Recuerda estirar las piernas cada hora.</string>
     <string name="hydration">Hidratación</string>
     <string name="nutrition">Alimentación</string>
@@ -17,35 +15,32 @@
     <string name="dashboard_nav">Dashboard</string>
     <string name="stats_nav">Estadísticas</string>
     <string name="profile_nav">Perfil</string>
-
-    <!-- Progress Screen -->
-    <string name="your_progress">Tu Progreso</string>
-    <string name="weekly">Semanal</string>
-    <string name="all_habits">Todos los hábitos</string>
-    <string name="streak_title">¡Racha de %1$d días!</string>
-    <string name="streak_subtitle">Sigue así para desbloquear un logro</string>
-    <string name="avg_sleep">Promedio de sueño: 7h 15m</string>
-    <string name="total_steps">Total de pasos de la semana: 35.200</string>
-
-    <!-- Profile Screen -->
-    <string name="preferences">Preferencias</string>
-    <string name="notifications">Notificaciones</string>
-    <string name="personalize_goals">Personalizar metas</string>
-    <string name="account_and_security">Cuenta y Seguridad</string>
-    <string name="change_password">Cambiar contraseña</string>
-    <string name="privacy_policy">Privacidad de datos</string>
-    <string name="send_feedback">Enviar comentarios</string>
-    <string name="help_and_faq">Ayuda y FAQ</string>
-    <string name="logout">Cerrar Sesión</string>
-
-    <!-- Register Habit Screen -->
     <string name="register_habit_title">Registrar Hábito</string>
-    <string name="date_label">Fecha: Hoy, 6 de Septiembre</string>
-    <string name="water">Agua</string>
-    <string name="exercise">Ejercicio</string>
+    <string name="date_label">Fecha: Hoy</string>
     <string name="minutes_of_exercise">Minutos de ejercicio</string>
     <string name="notes_optional">Notas (opcional)</string>
     <string name="save_button">Guardar</string>
     <string name="cancel_button">Cancelar</string>
-
+    <string name="your_progress">Tu Progreso</string>
+    <string name="weekly">Semanal</string>
+    <string name="all_habits">Todos los hábitos</string>
+    <string name="streak_title">¡Racha de %d días!</string>
+    <string name="streak_subtitle">Sigue así para desbloquear un logro</string>
+    <string name="avg_sleep">Promedio de sueño</string>
+    <string name="total_steps">Total de pasos</string>
+    <string name="preferences">Preferencias</string>
+    <string name="notifications">Notificaciones</string>
+    <string name="personalize_goals">Personalizar metas</string>
+    <string name="language">Idioma</string>
+    <string name="account_and_security">Cuenta y Seguridad</string>
+    <string name="change_password">Cambiar contraseña</string>
+    <string name="privacy_policy">Política de privacidad</string>
+    <string name="send_feedback">Enviar comentarios</string>
+    <string name="help_and_faq">Ayuda y FAQ</string>
+    <string name="logout">Cerrar Sesión</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Español</string>
+    <string name="current_language">Idioma actual: Español</string>
+    <string name="select_language">Seleccionar idioma</string>
+    <string name="language_updated">Idioma actualizado</string>
 </resources>
