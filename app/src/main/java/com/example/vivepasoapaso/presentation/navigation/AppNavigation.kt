@@ -25,15 +25,16 @@ fun AppNavigation() {
         startDestination = Screen.Dashboard.route
     ) {
         composable(Screen.Login.route) {
-            LoginScreen(
-                onLoginSuccess = { navController.navigate(Screen.Dashboard.route) }
-            )
+            LoginScreen()
         }
         composable(Screen.Dashboard.route) {
-            DashboardScreen(
-                onStatsClick = { navController.navigate(Screen.Progress.route) },
-                onProfileClick = { navController.navigate(Screen.Profile.route) }
-            )
+            DashboardScreen()
+        }
+        composable(Screen.Progress.route) {
+            ProgressScreen()
+        }
+        composable(Screen.Profile.route) {
+            ProfileScreen()
         }
     }
 }
