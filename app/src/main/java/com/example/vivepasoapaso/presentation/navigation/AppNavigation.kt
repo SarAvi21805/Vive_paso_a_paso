@@ -31,10 +31,14 @@ fun AppNavigation() {
             DashboardScreen()
         }
         composable(Screen.Progress.route) {
-            ProgressScreen()
+            ProgressScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
         composable(Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }
