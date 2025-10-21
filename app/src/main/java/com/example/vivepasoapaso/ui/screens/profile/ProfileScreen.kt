@@ -67,7 +67,7 @@ fun ProfileScreen(
                 hasToggle = true
             )
             ProfileOption(text = stringResource(id = R.string.personalize_goals))
-            ProfileOption(text = stringResource(id = R.string.lenguage))
+            ProfileOption(text = stringResource(id = R.string.language))
 
             HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
 
