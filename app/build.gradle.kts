@@ -52,6 +52,9 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -79,4 +82,8 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
+    implementation("androidx.core:core-ktx:1.12.0") //Notificaciones
+    implementation("com.google.android.gms:play-services-location:21.0.1") //Conteo de pasos
+    implementation("androidx.health:health-services-client:1.0.0-beta02")
+    implementation("androidx.core:core:1.12.0") //FileProvider
 }
