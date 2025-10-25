@@ -25,40 +25,6 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Dashboard.route // ← Asegúrate que esto sea correcto
-    ) {
-        composable(Screen.Login.route) {
-            LoginScreen()
-        }
-        composable(Screen.Dashboard.route) {
-            DashboardScreen()
-        }
-        composable(Screen.Progress.route) {
-            ProgressScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-        /*composable(Screen.Progress.route) {
-            ProgressScreenDiagnostic() // ← Temporalmente
-        }*/
-        composable(Screen.Profile.route) {
-            ProfileScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-        composable(Screen.RegisterHabit.route) {
-            RegisterHabitScreen()
-        }
-    }
-}
-
-/*
-@Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
-
-    NavHost(
-        navController = navController,
         startDestination = Screen.Dashboard.route
     ) {
         composable(Screen.Login.route) {
@@ -67,23 +33,17 @@ fun AppNavigation() {
         composable(Screen.Dashboard.route) {
             DashboardScreen()
         }
-        composable(Screen.RegisterHabit.route) {
-            RegisterHabitScreen()
-        }
         composable(Screen.Progress.route) {
-            ProgressScreenDiagnostic( // Cambia esto temporalmente
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-        /*composable(Screen.Progress.route) {
             ProgressScreen(
                 onBackClick = { navController.popBackStack() }
             )
-        }*/
+        }
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }
+        composable(Screen.RegisterHabit.route) {
+            RegisterHabitScreen()
+        }
     }
-}*/

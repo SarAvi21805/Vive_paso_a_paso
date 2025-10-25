@@ -4,8 +4,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // ELIMINAR DAGGER HILT POR AHORA (más simple)
-    // id("com.google.dagger.hilt.android") version "2.48" apply false
 }
 
 android {
@@ -94,23 +92,4 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
-
-    //ELIMINAR DAGGER HILT POR AHORA (más simple)
-    // implementation("com.google.dagger:hilt-android:2.48")
-    // kapt("com.google.dagger:hilt-android-compiler:2.48")
-}
-
-dependencies {
-    // ... otras dependencias
-
-    // Navigation
-
-
-    // ViewModel
-
-
-    // Material3
-
-    // Firebase
-
 }
