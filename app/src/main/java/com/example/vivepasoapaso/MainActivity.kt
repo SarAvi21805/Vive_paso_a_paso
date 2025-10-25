@@ -9,9 +9,41 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.vivepasoapaso.presentation.navigation.AppNavigation
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
-import com.example.vivepasoapaso.util.LocaleManager
+//import com.example.vivepasoapaso.util.LocaleManager
 
 class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            VivePasoAPasoTheme { // ← Asegúrate que el tema esté aplicado
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppNavigation()
+                }
+            }
+        }
+    }
+}
+
+/*class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            VivePasoAPasoTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppNavigation()
+                }
+            }
+        }
+    }
+}*/
+
+/*class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -34,4 +66,4 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         LocaleManager.setLocale(this, LocaleManager.getCurrentLanguage(this))
     }
-}
+}*/

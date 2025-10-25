@@ -7,7 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.vivepasoapaso.ui.screens.dashboard.DashboardScreen
 import com.example.vivepasoapaso.ui.screens.login.LoginScreen
 import com.example.vivepasoapaso.ui.screens.profile.ProfileScreen
-import com.example.vivepasoapaso.ui.screens.progress.ProgressScreen
+import com.example.vivepasoapaso.ui.screens.progress./*ProgressScreenDiagnostic*/ProgressScreen
 import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
 
 sealed class Screen(val route: String) {
@@ -19,6 +19,40 @@ sealed class Screen(val route: String) {
     object RegisterHabit : Screen("registerHabit")
 }
 
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Dashboard.route // ← Asegúrate que esto sea correcto
+    ) {
+        composable(Screen.Login.route) {
+            LoginScreen()
+        }
+        composable(Screen.Dashboard.route) {
+            DashboardScreen()
+        }
+        composable(Screen.Progress.route) {
+            ProgressScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        /*composable(Screen.Progress.route) {
+            ProgressScreenDiagnostic() // ← Temporalmente
+        }*/
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.RegisterHabit.route) {
+            RegisterHabitScreen()
+        }
+    }
+}
+
+/*
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -37,14 +71,19 @@ fun AppNavigation() {
             RegisterHabitScreen()
         }
         composable(Screen.Progress.route) {
-            ProgressScreen(
+            ProgressScreenDiagnostic( // Cambia esto temporalmente
                 onBackClick = { navController.popBackStack() }
             )
         }
+        /*composable(Screen.Progress.route) {
+            ProgressScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }*/
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }
     }
-}
+}*/
