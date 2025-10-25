@@ -1,5 +1,3 @@
-
-
 package com.example.vivepasoapaso.ui.screens.progress
 
 import androidx.compose.foundation.layout.*
