@@ -10,9 +10,8 @@ import java.util.*
 import kotlin.random.Random
 
 class ProgressViewModel : ViewModel() {
-    // ELIMINAMOS las dependencias de Firebase que causan el error
-    // private val habitRepository = HabitRepository()  // ← COMENTADO
-    // private val authRepository = AuthRepository()    // ← COMENTADO
+    // private val habitRepository = HabitRepository()  
+    // private val authRepository = AuthRepository()
 
     private val _state = MutableStateFlow(ProgressState())
     val state: StateFlow<ProgressState> = _state.asStateFlow()
