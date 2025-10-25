@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            VivePasoAPasoTheme { // ← Asegúrate que el tema esté aplicado
+            VivePasoAPasoTheme { 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -26,44 +26,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-/*class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            VivePasoAPasoTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavigation()
-                }
-            }
-        }
-    }
-}*/
-
-/*class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        //Saca el tema por defecto de la app
-        val context = LocaleManager.setLocale(this, LocaleManager.getCurrentLanguage(this))
-
-        setContent {
-            VivePasoAPasoTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    AppNavigation()
-                }
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        LocaleManager.setLocale(this, LocaleManager.getCurrentLanguage(this))
-    }
-}*/
