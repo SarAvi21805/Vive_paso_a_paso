@@ -1,3 +1,5 @@
+
+
 package com.example.vivepasoapaso.ui.screens.progress
 
 import androidx.compose.foundation.layout.*
@@ -22,6 +24,8 @@ import com.example.vivepasoapaso.R
 import com.example.vivepasoapaso.presentation.screens.progress.ProgressIntent
 import com.example.vivepasoapaso.presentation.screens.progress.ProgressViewModel
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +36,7 @@ fun ProgressScreen(
     val state by viewModel.state.collectAsState()
     val weeklyData by viewModel.weeklyData.collectAsState()
 
-    // Cargar datos al iniciar
+    //Cargar datos reales al iniciar
     LaunchedEffect(Unit) {
         viewModel.refreshData()
     }
@@ -69,7 +73,7 @@ fun ProgressScreen(
                 .padding(dimensionResource(id = R.dimen.padding_medium)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Mostrar loading si está cargando
+            //Mostrar loading si está cargando
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -82,57 +86,33 @@ fun ProgressScreen(
                     }
                 }
             } else {
-                // Mostrar error si existe
-                state.error?.let { error ->
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { viewModel.refreshData() }) {
-                                Text("Reintentar")
-                            }
-                        }
-                    }
-                    return@Column
-                }
-
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
-                // Botones de filtro
+                //Botones de filtro
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_small))
                 ) {
-                    FilterButton(
-                        text = stringResource(id = R.string.weekly),
-                        isSelected = true,
-                        onClick = { viewModel.refreshData() },
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterButton(
-                        text = stringResource(id = R.string.all_habits),
-                        isSelected = false,
-                        onClick = { /* TODO: Implementar filtro */ },
-                        modifier = Modifier.weight(1f),
-                        showDropdown = true
-                    )
+                    Button(onClick = {
+                        //Recargar datos semanales
+                        viewModel.refreshData()
+                    }, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(id = R.string.weekly))
+                    }
+                    OutlinedButton(onClick = { /* Filtro de gráfica */ }, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(id = R.string.all_habits))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-                // Gráfico de barras con datos
+                //Gráfico de barras con datos reales de Firebase
                 WeeklyBarChart(weeklyData = weeklyData)
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-                // Recomendación de IA
+                //Recomendación de IA
                 AIRecommendationCard(
                     recommendation = state.aiRecommendation,
                     isLoading = state.isLoading,
@@ -142,60 +122,85 @@ fun ProgressScreen(
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-                // Tarjeta con la racha
-                StreakCard(streakDays = state.streakDays)
+                //Parte de la tarjeta con la racha
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalFireDepartment,
+                            contentDescription = "Streak",
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.streak_title, state.streakDays),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(text = stringResource(id = R.string.streak_subtitle))
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
-                // Estadísticas
-                StatsGrid(
-                    weeklySleepAverage = state.weeklySleepAverage,
-                    sleepGoal = state.sleepHours,
-                    totalWeeklySteps = state.totalWeeklySteps,
-                    stepsGoal = state.steps,
-                    weeklyWaterAverage = state.weeklyWaterAverage,
-                    waterGoal = state.waterLiters,
-                    weeklyExerciseAverage = state.weeklyExerciseAverage,
-                    exerciseGoal = state.exerciseMinutes.toDouble()
-                )
+                //Primera fila de estadísticas
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+                ) {
+                    //Sección de promedio de sueño
+                    StatCard(
+                        title = stringResource(id = R.string.avg_sleep),
+                        currentValue = state.weeklySleepAverage,
+                        targetValue = state.sleepHours,
+                        unit = "h",
+                        modifier = Modifier.weight(1f)
+                    )
+                    //Sección de total de pasos semanales
+                    StatCard(
+                        title = "Pasos Totales",
+                        currentValue = state.totalWeeklySteps.toDouble(),
+                        targetValue = state.steps.toDouble(),
+                        unit = "",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+
+                //Segunda fila de estadísticas
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+                ) {
+                    //Sección de agua
+                    StatCard(
+                        title = "Agua Promedio",
+                        currentValue = state.weeklyWaterAverage,
+                        targetValue = state.waterLiters,
+                        unit = "L",
+                        modifier = Modifier.weight(1f)
+                    )
+                    //Sección de ejercicio
+                    StatCard(
+                        title = "Ejercicio Promedio",
+                        currentValue = state.weeklyExerciseAverage,
+                        targetValue = state.exerciseMinutes.toDouble(),
+                        unit = "min",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
 }
 
-// Componente para botones de filtro
-@Composable
-fun FilterButton(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    showDropdown: Boolean = false
-) {
-    if (isSelected) {
-        Button(
-            onClick = onClick,
-            modifier = modifier
-        ) {
-            Text(text = text)
-            if (showDropdown) {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-            }
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            modifier = modifier
-        ) {
-            Text(text = text)
-            if (showDropdown) {
-                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-            }
-        }
-    }
-}
-
-// Gráfico de barras semanal
+//Gráfico de barras semanal con datos reales
 @Composable
 fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.screens.progress.DailyStats>) {
     Card(
@@ -218,6 +223,7 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
             Spacer(modifier = Modifier.height(8.dp))
 
             if (weeklyData.isNotEmpty()) {
+                //Encontrar el valor máximo para escalar la gráfica
                 val maxWater = (weeklyData.maxOfOrNull { it.water } ?: 1.0).coerceAtLeast(1.0)
 
                 Row(
@@ -246,7 +252,7 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
                             verticalArrangement = Arrangement.Bottom,
                             modifier = Modifier.weight(1f)
                         ) {
-                            // Valor numérico
+                            //Valor numérico
                             Text(
                                 text = "%.1f".format(dailyStat.water),
                                 style = MaterialTheme.typography.labelSmall
@@ -254,7 +260,7 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
 
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            // Barra
+                            //Barra
                             Box(
                                 modifier = Modifier
                                     .width(20.dp)
@@ -265,7 +271,7 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
 
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            // Día de la semana
+                            //Día de la semana
                             Text(
                                 text = dayLabel,
                                 style = MaterialTheme.typography.labelSmall,
@@ -275,7 +281,7 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
                     }
                 }
             } else {
-                // Mostrar mensaje si no hay datos
+                //Mostrar mensaje si no hay datos
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -296,94 +302,7 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
     }
 }
 
-// Tarjeta de racha
-@Composable
-fun StreakCard(streakDays: Int) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.LocalFireDepartment,
-                contentDescription = "Streak",
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(40.dp)
-            )
-            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
-            Column {
-                Text(
-                    text = "¡Racha de $streakDays días!",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(text = "Sigue así para desbloquear un logro")
-            }
-        }
-    }
-}
-
-// Grid de estadísticas
-@Composable
-fun StatsGrid(
-    weeklySleepAverage: Double,
-    sleepGoal: Double,
-    totalWeeklySteps: Int,
-    stepsGoal: Int,
-    weeklyWaterAverage: Double,
-    waterGoal: Double,
-    weeklyExerciseAverage: Double,
-    exerciseGoal: Double
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.margin_medium))
-    ) {
-        // Primera fila
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-        ) {
-            StatCard(
-                title = "Promedio de sueño",
-                currentValue = weeklySleepAverage,
-                targetValue = sleepGoal,
-                unit = "h",
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                title = "Pasos Totales",
-                currentValue = totalWeeklySteps.toDouble(),
-                targetValue = stepsGoal.toDouble(),
-                unit = "",
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        // Segunda fila
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-        ) {
-            StatCard(
-                title = "Agua Promedio",
-                currentValue = weeklyWaterAverage,
-                targetValue = waterGoal,
-                unit = "L",
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                title = "Ejercicio Promedio",
-                currentValue = weeklyExerciseAverage,
-                targetValue = exerciseGoal,
-                unit = "min",
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-// Tarjeta de estadística reutilizable
+//Tarjeta de estadística reutilizable
 @Composable
 fun StatCard(
     title: String,
@@ -421,7 +340,7 @@ fun StatCard(
 
             Spacer(modifier = Modifier.height(2.dp))
 
-            // Barra de progreso
+            //Barra de progreso
             LinearProgressIndicator(
                 progress = progress.toFloat(),
                 modifier = Modifier
@@ -443,7 +362,7 @@ fun StatCard(
     }
 }
 
-// Recomendación de IA
+//Recomendación de IA
 @Composable
 fun AIRecommendationCard(
     recommendation: String,
@@ -491,7 +410,7 @@ fun AIRecommendationCard(
                 }
             } else if (!error.isNullOrEmpty()) {
                 Text(
-                    text = error,
+                    text = "$error",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
                 )
