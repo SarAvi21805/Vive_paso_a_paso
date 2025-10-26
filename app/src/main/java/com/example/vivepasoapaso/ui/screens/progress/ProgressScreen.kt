@@ -1,6 +1,8 @@
 package com.example.vivepasoapaso.ui.screens.progress
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -19,13 +21,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.vivepasoapaso.R
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.example.vivepasoapaso.presentation.screens.progress.ProgressIntent
 import com.example.vivepasoapaso.presentation.screens.progress.ProgressViewModel
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +36,9 @@ fun ProgressScreen(
     val viewModel: ProgressViewModel = viewModel()
     val state by viewModel.state.collectAsState()
     val weeklyData by viewModel.weeklyData.collectAsState()
+    val monthlyData by viewModel.monthlyData.collectAsState()
+    val selectedPeriod by viewModel.selectedPeriod.collectAsState()
+    val selectedHabitFilter by viewModel.selectedHabitFilter.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.refreshData()
@@ -73,7 +77,6 @@ fun ProgressScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //El resto del contenido permanece igual...
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -93,21 +96,113 @@ fun ProgressScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_small))
                 ) {
-                    Button(onClick = {
-                        viewModel.refreshData()
-                    }, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(id = R.string.weekly))
+                    //Selector de período
+                    var periodExpanded by remember { mutableStateOf(false) }
+                    val periods = listOf(
+                        "weekly" to stringResource(id = R.string.weekly),
+                        "monthly" to stringResource(id = R.string.monthly)
+                    )
+
+                    Box(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedButton(
+                            onClick = { periodExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(periods.first { it.first == selectedPeriod }.second)
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                        DropdownMenu(
+                            expanded = periodExpanded,
+                            onDismissRequest = { periodExpanded = false }
+                        ) {
+                            periods.forEach { period ->
+                                DropdownMenuItem(
+                                    text = { Text(period.second) },
+                                    onClick = {
+                                        viewModel.setPeriod(period.first)
+                                        periodExpanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
-                    OutlinedButton(onClick = { /* Filtro de gráfica */ }, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(id = R.string.all_habits))
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+
+                    //Selector de hábitos
+                    var habitExpanded by remember { mutableStateOf(false) }
+                    val habits = listOf(
+                        "all" to stringResource(id = R.string.all_habits),
+                        "water" to stringResource(id = R.string.hydration),
+                        "sleep" to stringResource(id = R.string.sleep),
+                        "exercise" to stringResource(id = R.string.exercise),
+                        "steps" to stringResource(id = R.string.steps)
+                    )
+
+                    Box(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedButton(
+                            onClick = { habitExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(habits.first { it.first == selectedHabitFilter }.second)
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        }
+                        DropdownMenu(
+                            expanded = habitExpanded,
+                            onDismissRequest = { habitExpanded = false }
+                        ) {
+                            habits.forEach { habit ->
+                                DropdownMenuItem(
+                                    text = { Text(habit.second) },
+                                    onClick = {
+                                        viewModel.setHabitFilter(habit.first)
+                                        habitExpanded = false
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
                 //Gráfico de barras
-                WeeklyBarChart(weeklyData = weeklyData)
+                val currentData = if (selectedPeriod == "weekly") weeklyData else monthlyData
+                if (currentData.isNotEmpty()) {
+                    HabitBarChart(
+                        data = currentData,
+                        selectedPeriod = selectedPeriod,
+                        selectedHabit = selectedHabitFilter
+                    )
+                } else {
+                    //Mensaje cuando no hay datos
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(id = R.string.no_data_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(id = R.string.no_data_message),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
@@ -147,7 +242,7 @@ fun ProgressScreen(
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
-                //Primera fila de estadísticas
+                //Estadísticas
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
@@ -160,7 +255,7 @@ fun ProgressScreen(
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
-                        title = "Pasos Totales",
+                        title = stringResource(id = R.string.total_steps),
                         currentValue = state.totalWeeklySteps.toDouble(),
                         targetValue = state.steps.toDouble(),
                         unit = "",
@@ -170,20 +265,19 @@ fun ProgressScreen(
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
-                //Segunda fila de estadísticas
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
                 ) {
                     StatCard(
-                        title = "Agua Promedio",
+                        title = stringResource(id = R.string.avg_water),
                         currentValue = state.weeklyWaterAverage,
                         targetValue = state.waterLiters,
                         unit = "L",
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
-                        title = "Ejercicio Promedio",
+                        title = stringResource(id = R.string.avg_exercise),
                         currentValue = state.weeklyExerciseAverage,
                         targetValue = state.exerciseMinutes.toDouble(),
                         unit = "min",
@@ -195,13 +289,19 @@ fun ProgressScreen(
     }
 }
 
-//Gráfico de barras semanal con datos reales
 @Composable
-fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.screens.progress.DailyStats>) {
+fun HabitBarChart(
+    data: List<com.example.vivepasoapaso.presentation.screens.progress.DailyStats>,
+    selectedPeriod: String,
+    selectedHabit: String
+) {
+    val chartHeight = if (selectedPeriod == "weekly") 220.dp else 280.dp
+    val barWidth = if (selectedPeriod == "weekly") 20.dp else 10.dp
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp),
+            .height(chartHeight),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -210,84 +310,116 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
                 .padding(16.dp)
         ) {
             Text(
-                text = "Consumo de Agua - Últimos 7 días",
+                text = when {
+                    selectedHabit == "all" -> stringResource(if (selectedPeriod == "weekly") R.string.all_habits_weekly else R.string.all_habits_monthly)
+                    selectedHabit == "water" -> stringResource(if (selectedPeriod == "weekly") R.string.water_weekly else R.string.water_monthly)
+                    selectedHabit == "sleep" -> stringResource(if (selectedPeriod == "weekly") R.string.sleep_weekly else R.string.sleep_monthly)
+                    selectedHabit == "exercise" -> stringResource(if (selectedPeriod == "weekly") R.string.exercise_weekly else R.string.exercise_monthly)
+                    else -> stringResource(if (selectedPeriod == "weekly") R.string.steps_weekly else R.string.steps_monthly)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            if (weeklyData.isNotEmpty()) {
-                //Encontrar el valor máximo para escalar la gráfica
-                val maxWater = (weeklyData.maxOfOrNull { it.water } ?: 1.0).coerceAtLeast(1.0)
+            if (data.isNotEmpty()) {
+                //Obtener valores según el hábito seleccionado
+                val values = data.map { dailyStat ->
+                    when (selectedHabit) {
+                        "water" -> dailyStat.water
+                        "sleep" -> dailyStat.sleep
+                        "exercise" -> dailyStat.exercise.toDouble()
+                        "steps" -> dailyStat.steps.toDouble()
+                        else -> (dailyStat.water + dailyStat.sleep + dailyStat.exercise / 60.0) / 3.0 // Promedio normalizado para "all"
+                    }
+                }
 
-                Row(
+                val maxValue = (values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+                val chartHeightDp = if (selectedPeriod == "weekly") 120.dp else 180.dp
+
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Bottom
+                        .height(chartHeightDp)
                 ) {
-                    weeklyData.forEachIndexed { index, dailyStat ->
-                        val dayLabel = when (index) {
-                            0 -> "D"
-                            1 -> "L"
-                            2 -> "M"
-                            3 -> "M"
-                            4 -> "J"
-                            5 -> "V"
-                            6 -> "S"
-                            else -> ""
-                        }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        data.forEachIndexed { index, dailyStat ->
+                            val value = values[index]
+                            val heightFraction = (value / maxValue).toFloat().coerceIn(0.1f, 1f)
 
-                        val heightFraction = (dailyStat.water / maxWater).toFloat().coerceIn(0f, 1f)
+                            val label = if (selectedPeriod == "weekly") {
+                                val days = listOf("D", "L", "M", "M", "J", "V", "S")
+                                days.getOrNull(index) ?: "${index + 1}"
+                            } else {
+                                "${index + 1}"
+                            }
 
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Bottom,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            //Valor numérico
-                            Text(
-                                text = "%.1f".format(dailyStat.water),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            //Barra
-                            Box(
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Bottom,
                                 modifier = Modifier
-                                    .width(20.dp)
-                                    .fillMaxHeight(heightFraction)
-                                    .clip(MaterialTheme.shapes.small)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
+                                    .weight(1f)
+                                    .padding(horizontal = 2.dp)
+                            ) {
+                                //Valor numérico
+                                Text(
+                                    text = when {
+                                        selectedHabit == "steps" -> "${value.toInt()}"
+                                        selectedHabit == "exercise" -> "${value.toInt()}"
+                                        else -> "%.1f".format(value)
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                                //Barra
+                                Box(
+                                    modifier = Modifier
+                                        .width(barWidth)
+                                        .height((chartHeightDp * 0.7f) * heightFraction)
+                                        .clip(MaterialTheme.shapes.small)
+                                        .background(
+                                            when (selectedHabit) {
+                                                "water" -> Color(0xFF2196F3)
+                                                "sleep" -> Color(0xFF4CAF50)
+                                                "exercise" -> Color(0xFFFF9800)
+                                                "steps" -> Color(0xFF9C27B0)
+                                                else -> MaterialTheme.colorScheme.primary
+                                            }
+                                        )
+                                )
 
-                            //Día de la semana
-                            Text(
-                                text = dayLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
-                            )
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                //Etiqueta del día
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
             } else {
-                //Mostrar mensaje si no hay datos
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "No hay datos registrados",
+                            text = stringResource(id = R.string.no_data_title),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "Registra tus hábitos para ver tu progreso",
+                            text = stringResource(id = R.string.no_data_message),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -297,7 +429,6 @@ fun WeeklyBarChart(weeklyData: List<com.example.vivepasoapaso.presentation.scree
     }
 }
 
-//Tarjeta de estadística reutilizable
 @Composable
 fun StatCard(
     title: String,
@@ -357,7 +488,6 @@ fun StatCard(
     }
 }
 
-//Recomendación de IA
 @Composable
 fun AIRecommendationCard(
     recommendation: String,
