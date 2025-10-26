@@ -2,25 +2,62 @@ package com.example.vivepasoapaso.presentation.screens.progress
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.vivepasoapaso.data.repository.ChatRepository
+import com.example.vivepasoapaso.data.repository.ChatRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.random.Random
 
 class ProgressViewModel : ViewModel() {
-    // private val habitRepository = HabitRepository()  
-    // private val authRepository = AuthRepository()
+    private val chatRepository: ChatRepository = ChatRepositoryImpl()
+
+    //Estados para filtros
+    private val _selectedPeriod = MutableStateFlow("weekly") // "weekly" o "monthly"
+    val selectedPeriod: StateFlow<String> = _selectedPeriod.asStateFlow()
+
+    private val _selectedHabitFilter = MutableStateFlow("all") // "all", "water", "sleep", "steps", "exercise"
+    val selectedHabitFilter: StateFlow<String> = _selectedHabitFilter.asStateFlow()
 
     private val _state = MutableStateFlow(ProgressState())
     val state: StateFlow<ProgressState> = _state.asStateFlow()
 
+    //Datos para gráficas
     private val _weeklyData = MutableStateFlow<List<DailyStats>>(emptyList())
     val weeklyData: StateFlow<List<DailyStats>> = _weeklyData.asStateFlow()
 
+    private val _monthlyData = MutableStateFlow<List<DailyStats>>(emptyList())
+    val monthlyData: StateFlow<List<DailyStats>> = _monthlyData.asStateFlow()
+
+    //Datos procesados para gráficas
+    private val _chartData = MutableStateFlow(ChartData())
+    val chartData: StateFlow<ChartData> = _chartData.asStateFlow()
+
+    //Colores para cada hábito
+    private val habitColors = mapOf(
+        "water" to 0xFF2196F3,    //Azul
+        "sleep" to 0xFF9C27B0,    //Morado
+        "steps" to 0xFFFF9800,    //Naranja
+        "exercise" to 0xFFF44336, //Rojo
+        "nutrition" to 0xFF4CAF50 //Verde
+    )
+
     init {
         loadUserData()
+    }
+
+    fun setPeriod(period: String) {
+        _selectedPeriod.value = period
+        refreshData()
+        updateChartData()
+    }
+
+    fun setHabitFilter(habit: String) {
+        _selectedHabitFilter.value = habit
+        updateChartData()
     }
 
     private fun loadUserData() {
@@ -28,10 +65,8 @@ class ProgressViewModel : ViewModel() {
             _state.value = _state.value.copy(isLoading = true)
 
             try {
-                // Simular una pequeña demora para mostrar el loading
                 kotlinx.coroutines.delay(800)
 
-                // Usar datos por defecto en lugar de Firebase
                 _state.value = _state.value.copy(
                     sleepHours = 8.0,
                     steps = 10000,
@@ -39,13 +74,12 @@ class ProgressViewModel : ViewModel() {
                     exerciseMinutes = 30
                 )
 
-                // Cargar datos semanales (datos de ejemplo)
                 loadWeeklyData()
-
-                // Generar recomendación
+                loadMonthlyData()
                 getAIRecommendation()
 
                 _state.value = _state.value.copy(isLoading = false)
+                updateChartData()
 
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
@@ -60,13 +94,20 @@ class ProgressViewModel : ViewModel() {
     private fun loadWeeklyData() {
         viewModelScope.launch {
             try {
-                // Usar datos de ejemplo en lugar de Firebase
                 val sampleData = generateSampleWeeklyData()
                 _weeklyData.value = sampleData
-
-                // Calcular promedios
                 calculateWeeklyAverages(sampleData)
+            } catch (e: Exception) {
+                loadSampleData()
+            }
+        }
+    }
 
+    private fun loadMonthlyData() {
+        viewModelScope.launch {
+            try {
+                val sampleData = generateSampleMonthlyData()
+                _monthlyData.value = sampleData
             } catch (e: Exception) {
                 loadSampleData()
             }
@@ -76,21 +117,22 @@ class ProgressViewModel : ViewModel() {
     private fun generateSampleWeeklyData(): List<DailyStats> {
         val calendar = Calendar.getInstance()
         val sampleData = mutableListOf<DailyStats>()
+        val dateFormat = SimpleDateFormat("EEE", Locale.getDefault())
 
-        // Generar datos de ejemplo realistas para los últimos 7 días
         for (i in 6 downTo 0) {
             calendar.time = Date()
             calendar.add(Calendar.DAY_OF_YEAR, -i)
             val day = calendar.time
 
-            // Datos de ejemplo realistas con cierta variación
-            val water = 1.5 + (Random.nextDouble() * 1.0) // 1.5-2.5 litros
-            val sleep = 6.5 + (Random.nextDouble() * 2.0) // 6.5-8.5 horas
-            val steps = 8000 + (Random.nextDouble() * 4000).toInt() // 8000-12000 pasos
-            val exercise = 20 + (Random.nextDouble() * 40).toInt() // 20-60 minutos
+            //Datos más realistas para gráficas semanales
+            val water = 1.5 + (Random.nextDouble() * 1.0)
+            val sleep = 6.5 + (Random.nextDouble() * 2.0)
+            val steps = 8000 + (Random.nextDouble() * 4000).toInt()
+            val exercise = 20 + (Random.nextDouble() * 40).toInt()
 
             sampleData.add(DailyStats(
                 date = day,
+                dayLabel = dateFormat.format(day).take(3), //"Lun", "Mar", etc.
                 water = water,
                 sleep = sleep,
                 steps = steps,
@@ -102,18 +144,187 @@ class ProgressViewModel : ViewModel() {
         return sampleData
     }
 
+    private fun generateSampleMonthlyData(): List<DailyStats> {
+        val calendar = Calendar.getInstance()
+        val sampleData = mutableListOf<DailyStats>()
+
+        //Generar datos para 4 semanas
+        for (week in 0 until 4) {
+            calendar.time = Date()
+            calendar.add(Calendar.WEEK_OF_YEAR, -week)
+
+            //Promedio semanal para cada hábito
+            val baseWater = 1.5 + (week * 0.1)
+            val baseSleep = 6.5 + (week * 0.2)
+            val baseSteps = 8000 + (week * 500)
+            val baseExercise = 20 + (week * 5)
+
+            val water = baseWater + (Random.nextDouble() * 0.3)
+            val sleep = baseSleep + (Random.nextDouble() * 0.5)
+            val steps = baseSteps + (Random.nextDouble() * 1000).toInt()
+            val exercise = baseExercise + (Random.nextDouble() * 10).toInt()
+
+            sampleData.add(DailyStats(
+                date = calendar.time,
+                dayLabel = "${week + 1}", //"1", "2", "3", "4" para semanas
+                water = water,
+                sleep = sleep,
+                steps = steps,
+                exercise = exercise,
+                nutrition = 1800.0 + (Random.nextDouble() * 200)
+            ))
+        }
+
+        return sampleData.reversed() //Ordenar de la semana 1 a la 4
+    }
+
+    //Función clave: procesar datos para gráficas
+    private fun updateChartData() {
+        val currentData = if (_selectedPeriod.value == "weekly") {
+            _weeklyData.value
+        } else {
+            _monthlyData.value
+        }
+
+        val selectedHabit = _selectedHabitFilter.value
+
+        val chartData = if (selectedHabit == "all") {
+            //Modo múltiples hábitos - Gráfica de líneas (como la primera imagen)
+            processMultiHabitLineData(currentData)
+        } else {
+            //Modo hábito individual - Gráfica de barras (como la segunda imagen)
+            processSingleHabitBarData(currentData, selectedHabit)
+        }
+
+        _chartData.value = chartData
+    }
+
+    private fun processSingleHabitBarData(data: List<DailyStats>, habit: String): ChartData {
+        val labels = data.map { it.dayLabel }
+        val values = when (habit) {
+            "water" -> data.map { it.water }
+            "sleep" -> data.map { it.sleep }
+            "steps" -> data.map { it.steps.toFloat() / 1000 } //Convertir a miles para mejor visualización
+            "exercise" -> data.map { it.exercise.toFloat() }
+            "nutrition" -> data.map { it.nutrition / 1000 } //Convertir a miles de calorías
+            else -> data.map { it.water }
+        }
+
+        val color = habitColors[habit] ?: 0xFF2196F3
+
+        return ChartData(
+            labels = labels,
+            datasets = listOf(
+                ChartDataset(
+                    label = getHabitDisplayName(habit),
+                    values = values,
+                    color = color,
+                    chartType = if (habit == "steps" || habit == "exercise") "bar" else "bar"
+                )
+            ),
+            isMultiHabit = false,
+            yAxisConfig = when (habit) {
+                "steps" -> YAxisConfig(
+                    minValue = 0f,
+                    maxValue = 12f, //Miles de pasos
+                    labelFormat = "{value}K",
+                    steps = 6
+                )
+                "exercise" -> YAxisConfig(
+                    minValue = 0f,
+                    maxValue = 60f,
+                    labelFormat = "{value}m",
+                    steps = 6
+                )
+                "water" -> YAxisConfig(
+                    minValue = 0f,
+                    maxValue = 3f,
+                    labelFormat = "{value}L",
+                    steps = 6
+                )
+                "sleep" -> YAxisConfig(
+                    minValue = 0f,
+                    maxValue = 10f,
+                    labelFormat = "{value}h",
+                    steps = 5
+                )
+                else -> YAxisConfig(
+                    minValue = 0f,
+                    maxValue = 2.5f,
+                    labelFormat = "{value}K",
+                    steps = 5
+                )
+            }
+        )
+    }
+
+    private fun processMultiHabitLineData(data: List<DailyStats>): ChartData {
+        val labels = data.map { it.dayLabel }
+
+        //Crear datasets para cada hábito (líneas de diferentes colores)
+        val datasets = listOf(
+            ChartDataset(
+                label = "Agua",
+                values = data.map { it.water },
+                color = habitColors["water"] ?: 0xFF2196F3,
+                chartType = "line"
+            ),
+            ChartDataset(
+                label = "Sueño",
+                values = data.map { it.sleep },
+                color = habitColors["sleep"] ?: 0xFF4CAF50,
+                chartType = "line"
+            ),
+            ChartDataset(
+                label = "Pasos",
+                values = data.map { it.steps.toFloat() / 1000 }, // Convertir a miles
+                color = habitColors["steps"] ?: 0xFFFF9800,
+                chartType = "line"
+            ),
+            ChartDataset(
+                label = "Ejercicio",
+                values = data.map { it.exercise.toFloat() },
+                color = habitColors["exercise"] ?: 0xFFF44336,
+                chartType = "line"
+            )
+        )
+
+        return ChartData(
+            labels = labels,
+            datasets = datasets,
+            isMultiHabit = true,
+            yAxisConfig = YAxisConfig(
+                minValue = 0f,
+                maxValue = 10f,
+                labelFormat = "{value}",
+                steps = 5
+            )
+        )
+    }
+
+    private fun getHabitDisplayName(habit: String): String {
+        return when (habit) {
+            "water" -> "Consumo de Agua (L)"
+            "sleep" -> "Horas de Sueño"
+            "steps" -> "Pasos (miles)"
+            "exercise" -> "Ejercicio (min)"
+            "nutrition" -> "Calorías (miles)"
+            else -> "Hábito"
+        }
+    }
+
     private fun loadSampleData() {
         val sampleData = generateSampleWeeklyData()
         _weeklyData.value = sampleData
         calculateWeeklyAverages(sampleData)
+        updateChartData()
 
         _state.value = _state.value.copy(
             streakDays = 5,
             totalWeeklySteps = 75600,
             weeklyWaterAverage = 1.8,
             weeklySleepAverage = 7.2,
-            weeklyExerciseAverage = 35.0,
-            aiRecommendation = "¡Buen trabajo! Tu consistencia en el ejercicio está mejorando. Sigue así."
+            weeklyExerciseAverage = 35.0
         )
     }
 
@@ -149,27 +360,56 @@ class ProgressViewModel : ViewModel() {
     private fun getAIRecommendation() {
         viewModelScope.launch {
             try {
-                kotlinx.coroutines.delay(500)
+                _state.value = _state.value.copy(isLoading = true)
 
-                val recommendations = listOf(
-                    "¡Excelente progreso! Tu consumo de agua está mejorando. Sigue hidratándote.",
-                    "Tu consistencia en el ejercicio es admirable. Considera agregar variedad a tu rutina.",
-                    "Los patrones de sueño muestran mejora. Intenta mantener un horario consistente.",
-                    "¡Buen trabajo con los pasos! Prueba caminar al aire libre para variar.",
-                    "Tu balance entre ejercicio y descanso es óptimo. Continúa así."
-                )
-
-                val randomRecommendation = recommendations.random()
+                val currentLanguage = Locale.getDefault().language
+                val userStats = buildUserStatsMessage(currentLanguage)
+                val response = chatRepository.getAIResponse(userStats)
 
                 _state.value = _state.value.copy(
-                    aiRecommendation = randomRecommendation
+                    aiRecommendation = response.text,
+                    isLoading = false
                 )
 
             } catch (e: Exception) {
+                val currentLanguage = Locale.getDefault().language
+                val errorRecommendation = if (currentLanguage == "es") {
+                    "Mantén una rutina constante para ver mejoras en tus hábitos. Intenta beber más agua y mantener un horario de sueño regular."
+                } else {
+                    "Keep a consistent routine to see improvements in your habits. Try to drink more water and maintain a regular sleep schedule."
+                }
+
                 _state.value = _state.value.copy(
-                    aiRecommendation = "Mantén una rutina constante para ver mejoras en tus hábitos."
+                    aiRecommendation = errorRecommendation,
+                    isLoading = false
                 )
             }
+        }
+    }
+
+    private fun buildUserStatsMessage(language: String): String {
+        val state = _state.value
+
+        return if (language == "es") {
+            "Soy un usuario de una app de hábitos saludables. " +
+                    "Mis estadísticas semanales son: " +
+                    "Promedio de sueño: ${String.format("%.1f", state.weeklySleepAverage)} horas, " +
+                    "Promedio de agua: ${String.format("%.1f", state.weeklyWaterAverage)} litros, " +
+                    "Promedio de ejercicio: ${String.format("%.1f", state.weeklyExerciseAverage)} minutos, " +
+                    "Total de pasos: ${state.totalWeeklySteps}. " +
+                    "Mi objetivo diario es: ${state.sleepHours} horas de sueño, ${state.waterLiters} litros de agua, ${state.exerciseMinutes} minutos de ejercicio y ${state.steps} pasos. " +
+                    "Por favor, dame una recomendación personalizada, breve y motivadora basada en mi progreso. " +
+                    "Sé positivo y alentador. Responde en español."
+        } else {
+            "I'm a user of a healthy habits app. " +
+                    "My weekly stats are: " +
+                    "Sleep average: ${String.format("%.1f", state.weeklySleepAverage)} hours, " +
+                    "Water average: ${String.format("%.1f", state.weeklyWaterAverage)} liters, " +
+                    "Exercise average: ${String.format("%.1f", state.weeklyExerciseAverage)} minutes, " +
+                    "Total steps: ${state.totalWeeklySteps}. " +
+                    "My daily goal is: ${state.sleepHours} hours of sleep, ${state.waterLiters} liters of water, ${state.exerciseMinutes} minutes of exercise and ${state.steps} steps. " +
+                    "Please give me a personalized, brief and motivating recommendation based on my progress. " +
+                    "Be positive and encouraging. Respond in English."
         }
     }
 
@@ -185,18 +425,38 @@ class ProgressViewModel : ViewModel() {
             ProgressIntent.RefreshData -> {
                 refreshData()
             }
-            else -> {
-                // Otros intents pueden manejarse aquí
-            }
         }
     }
 }
 
+//Data classes mejoradas para gráficas
 data class DailyStats(
     val date: Date,
+    val dayLabel: String, //Etiqueta para el eje X ("Lun", "Mar", "1", "2", etc.)
     val water: Double,
     val sleep: Double,
     val steps: Int,
     val exercise: Int,
     val nutrition: Double
+)
+
+data class ChartData(
+    val labels: List<String> = emptyList(), //Etiquetas del eje X
+    val datasets: List<ChartDataset> = emptyList(),
+    val isMultiHabit: Boolean = false,
+    val yAxisConfig: YAxisConfig = YAxisConfig()
+)
+
+data class ChartDataset(
+    val label: String,
+    val values: List<Any>, //Valores numéricos
+    val color: Long,
+    val chartType: String = "line" //"line" o "bar"
+)
+
+data class YAxisConfig(
+    val minValue: Float = 0f,
+    val maxValue: Float = 10f,
+    val labelFormat: String = "{value}",
+    val steps: Int = 5
 )

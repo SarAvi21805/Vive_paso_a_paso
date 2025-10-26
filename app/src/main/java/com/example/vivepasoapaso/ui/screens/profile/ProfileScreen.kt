@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,44 +35,53 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.text.input.KeyboardType
 import kotlinx.coroutines.launch
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.vivepasoapaso.presentation.auth.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val authViewModel: AuthViewModel = viewModel()
+    val auth: FirebaseAuth? = try {
+        Firebase.auth
+    } catch (e: IllegalStateException) {
+        null
+    }
 
-    // Estados temporales
+    //Estados
     val snackbarHostState = remember { SnackbarHostState() }
-    val isUpdatingGoals = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showGoalsDialog by remember { mutableStateOf(false) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
-    var showPermissionRationale by remember { mutableStateOf(false) }
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
+    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var notificationsEnabled by remember { mutableStateOf(true) }
 
-    // Estados para datos de usuario
+    //Idioma siempre actualizado
     val currentLanguage = remember {
         mutableStateOf(LocaleManager.getDisplayLanguage(context))
     }
     val currentLanguageCode = remember {
         mutableStateOf(LocaleManager.getCurrentLanguage(context))
     }
-    val userName = remember { mutableStateOf("Usuario") }
-    val userEmail = remember { mutableStateOf("usuario@email.com") }
 
-    // Estado para la imagen de perfil
     var profileImage by remember { mutableStateOf(ImageManager.loadProfileImage(context)) }
 
-    // Launcher para la cámara
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -80,7 +90,6 @@ fun ProfileScreen(
         }
     }
 
-    // Launcher para la galería
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -91,32 +100,40 @@ fun ProfileScreen(
         }
     }
 
-    // Launchers para permisos
     val cameraPermissionLauncher = PermissionManager.rememberCameraPermissionLauncher(
         onPermissionGranted = {
-            // Abrir cámara después de obtener permiso
             val file = ImageManager.createImageFile(context)
             val uri = ImageManager.getImageUri(context, file)
             cameraLauncher.launch(uri)
         },
         onPermissionDenied = {
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Permiso de cámara denegado. Puedes activarlo en Configuración.")
+                snackbarHostState.showSnackbar("Permiso de cámara denegado")
             }
         }
     )
 
     val storagePermissionLauncher = PermissionManager.rememberStoragePermissionLauncher(
         onPermissionGranted = {
-            // Abrir galería después de obtener permiso
             galleryLauncher.launch("image/*")
         },
         onPermissionDenied = {
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Permiso de almacenamiento denegado. Puedes activarlo en Configuración.")
+                snackbarHostState.showSnackbar("Permiso de almacenamiento denegado")
             }
         }
     )
+
+    //Actualizar idioma cada vez que la pantalla se muestre
+    LaunchedEffect(Unit) {
+        currentLanguage.value = LocaleManager.getDisplayLanguage(context)
+        currentLanguageCode.value = LocaleManager.getCurrentLanguage(context)
+
+        //Cargar estado de notificaciones
+        DataStoreManager.getNotificationsEnabled(context).collect { enabled ->
+            notificationsEnabled = enabled
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -136,154 +153,170 @@ fun ProfileScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(dimensionResource(id = R.dimen.padding_medium))
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
+            //Avatar
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(dimensionResource(id = R.dimen.padding_medium))
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .clickable { showImageSourceDialog = true },
+                contentAlignment = Alignment.Center
             ) {
-                // Avatar con imagen o inicial
+                if (profileImage != null) {
+                    Image(
+                        bitmap = profileImage!!.asImageBitmap(),
+                        contentDescription = "Foto de perfil",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = "U",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontSize = 48.sp
+                    )
+                }
+
                 Box(
                     modifier = Modifier
-                        .size(120.dp)
+                        .align(Alignment.BottomEnd)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .clickable { showImageSourceDialog = true },
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (profileImage != null) {
-                        Image(
-                            bitmap = profileImage!!.asImageBitmap(),
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.CameraAlt,
-                                contentDescription = "Cambiar foto",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = "U",
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontSize = 48.sp
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.CameraAlt,
-                                contentDescription = "Agregar foto",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
-                Text(
-                    text = userName.value,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = userEmail.value,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-                // Preferencias del usuario
-                SectionTitle(title = stringResource(id = R.string.preferences))
-                ProfileOption(
-                    text = stringResource(id = R.string.notifications),
-                    icon = Icons.Default.Notifications,
-                    hasToggle = true
-                )
-                ProfileOption(
-                    text = stringResource(id = R.string.personalize_goals),
-                    icon = Icons.Default.FitnessCenter,
-                    onClick = { showGoalsDialog = true }
-                )
-
-                ProfileOption(
-                    text = stringResource(id = R.string.language),
-                    icon = Icons.Default.Language,
-                    value = currentLanguage.value,
-                    onClick = { showLanguageDialog = true }
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
-
-                // Cuenta y Seguridad
-                SectionTitle(title = stringResource(id = R.string.account_and_security))
-                ProfileOption(text = stringResource(id = R.string.change_password))
-                ProfileOption(text = stringResource(id = R.string.privacy_policy))
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
-
-                // Botones de comentario, ayuda y cierre de sesión
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-                ) {
-                    OutlinedButton(onClick = {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Función de comentarios próximamente")
-                        }
-                    }, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(id = R.string.send_feedback))
-                    }
-                    OutlinedButton(onClick = {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Centro de ayuda próximamente")
-                        }
-                    }, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(id = R.string.help_and_faq))
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-                Button(
-                    onClick = {
-                        ImageManager.deleteProfileImage(context)
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Sesión cerrada correctamente")
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(text = stringResource(id = R.string.logout))
+                    Icon(
+                        Icons.Default.CameraAlt,
+                        contentDescription = "Cambiar foto",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+
+            //Información del usuario
+            Text(
+                text = auth?.currentUser?.displayName ?: "Usuario",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = auth?.currentUser?.email ?: "usuario@email.com",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+            //Preferencias
+            SectionTitle(title = stringResource(id = R.string.preferences))
+
+            //Opción de notificaciones con toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = dimensionResource(id = R.dimen.padding_medium)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_small)))
+                    Text(
+                        text = stringResource(id = R.string.notifications),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Switch(
+                    checked = notificationsEnabled,
+                    onCheckedChange = { enabled ->
+                        notificationsEnabled = enabled
+                        coroutineScope.launch {
+                            DataStoreManager.setNotificationsEnabled(context, enabled)
+                            snackbarHostState.showSnackbar(
+                                if (enabled) "Notificaciones activadas"
+                                else "Notificaciones desactivadas"
+                            )
+                        }
+                    }
+                )
+            }
+
+            //Personalizar metas
+            ProfileOption(
+                text = stringResource(id = R.string.personalize_goals),
+                icon = Icons.Default.FitnessCenter,
+                onClick = { showGoalsDialog = true }
+            )
+
+            //Idioma siempre actualizado
+            ProfileOption(
+                text = stringResource(id = R.string.language),
+                icon = Icons.Default.Language,
+                value = currentLanguage.value,
+                onClick = { showLanguageDialog = true }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
+
+            //Cuenta y Seguridad
+            SectionTitle(title = stringResource(id = R.string.account_and_security))
+            ProfileOption(
+                text = stringResource(id = R.string.change_password),
+                onClick = {
+                    if (auth?.currentUser != null) {
+                        showChangePasswordDialog = true
+                    } else {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Debes iniciar sesión para cambiar la contraseña")
+                        }
+                    }
+                }
+            )
+            ProfileOption(
+                text = stringResource(id = R.string.privacy_policy),
+                icon = Icons.Default.Info,
+                onClick = { showPrivacyPolicyDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+            //Botón de cerrar sesión
+            Button(
+                onClick = { showLogoutDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(text = stringResource(id = R.string.logout))
+            }
+        }
+
+        if (showGoalsDialog) {
+            SimpleGoalsDialog(
+                onDismiss = { showGoalsDialog = false },
+                onGoalsSaved = { goals ->
+                    authViewModel.updateDailyGoals(goals)
+                    showGoalsDialog = false
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Metas actualizadas correctamente")
+                    }
+                }
+            )
         }
 
         //Diálogo para seleccionar fuente de imagen
@@ -297,7 +330,6 @@ fun ProfileScreen(
                         val uri = ImageManager.getImageUri(context, file)
                         cameraLauncher.launch(uri)
                     } else {
-                        //Solicitar permiso de cámara
                         cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
                     }
                 },
@@ -306,28 +338,13 @@ fun ProfileScreen(
                     if (PermissionManager.hasStoragePermission(context)) {
                         galleryLauncher.launch("image/*")
                     } else {
-                        //Solicitar permisos de almacenamiento - CORREGIDO: sin @Composable
                         storagePermissionLauncher.launch(PermissionManager.getStoragePermissions())
                     }
                 }
             )
         }
 
-        if (showPermissionRationale) {
-            AlertDialog(
-                onDismissRequest = { showPermissionRationale = false },
-                title = { Text("Permisos necesarios") },
-                text = {
-                    Text("Esta aplicación necesita acceso a la cámara y almacenamiento para que puedas tomar fotos de perfil y seleccionar imágenes de tu galería. Los permisos se usan solo para esta funcionalidad.")
-                },
-                confirmButton = {
-                    TextButton(onClick = { showPermissionRationale = false }) {
-                        Text("Entendido")
-                    }
-                }
-            )
-        }
-
+        //Diálogo de selección de idioma
         if (showLanguageDialog) {
             LanguageSelectionDialog(
                 currentLanguageCode = currentLanguageCode.value,
@@ -337,33 +354,290 @@ fun ProfileScreen(
                     currentLanguage.value = LocaleManager.getDisplayLanguage(newContext)
                     currentLanguageCode.value = languageCode
                     showLanguageDialog = false
+
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Idioma cambiado a ${if (languageCode == "es") "Español" else "English"}")
+                        snackbarHostState.showSnackbar(
+                            if (languageCode == "es") "Idioma cambiado a Español"
+                            else "Language changed to English"
+                        )
+                    }
+
+                    //Forzar actualización de la actividad
+                    (context as? android.app.Activity)?.recreate()
+                }
+            )
+        }
+
+        //Diálogo para cambiar contraseña
+        if (showChangePasswordDialog) {
+            ChangePasswordDialog(
+                onDismiss = { showChangePasswordDialog = false },
+                onPasswordChanged = {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Contraseña cambiada correctamente")
                     }
                 }
             )
         }
 
-        if (showGoalsDialog) {
-            PersonalizeGoalsDialog(
-                onDismiss = { showGoalsDialog = false },
-                onGoalsSaved = { goals ->
-                    isUpdatingGoals.value = true
-                    coroutineScope.launch {
-                        kotlinx.coroutines.delay(1000)
-                        isUpdatingGoals.value = false
-                        snackbarHostState.showSnackbar("¡Metas actualizadas correctamente!")
-                        showGoalsDialog = false
+        if (showPrivacyPolicyDialog) {
+            AlertDialog(
+                onDismissRequest = { showPrivacyPolicyDialog = false },
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.privacy_policy),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(id = R.string.privacy_policy_content),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPrivacyPolicyDialog = false }) {
+                        Text("Aceptar")
+                    }
+                }
+            )
+        }
+
+        if (showLogoutDialog) {
+            AlertDialog(
+                onDismissRequest = { showLogoutDialog = false },
+                title = { Text("Cerrar sesión") },
+                text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showLogoutDialog = false
+                            authViewModel.signOut()
+                            onNavigateToLogin()
+                        }
+                    ) {
+                        Text("Sí, cerrar sesión")
                     }
                 },
-                currentGoals = null,
-                isLoading = isUpdatingGoals.value
+                dismissButton = {
+                    TextButton(onClick = { showLogoutDialog = false }) {
+                        Text("Cancelar")
+                    }
+                }
             )
         }
     }
 }
 
-// Diálogo para seleccionar fuente de imagen
+//Diálogo simplificado de metas
+@Composable
+fun SimpleGoalsDialog(
+    onDismiss: () -> Unit,
+    onGoalsSaved: (com.example.vivepasoapaso.data.model.DailyGoals) -> Unit
+) {
+    var water by remember { mutableStateOf("2.0") }
+    var sleep by remember { mutableStateOf("8.0") }
+    var steps by remember { mutableStateOf("10000") }
+    var exercise by remember { mutableStateOf("30") }
+    var calories by remember { mutableStateOf("2000") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Personalizar Metas Diarias", style = MaterialTheme.typography.headlineSmall)
+        },
+        text = {
+            Column {
+                GoalInputField(
+                    label = "Agua (litros)",
+                    value = water,
+                    onValueChange = { water = it },
+                    unit = "L"
+                )
+                GoalInputField(
+                    label = "Sueño (horas)",
+                    value = sleep,
+                    onValueChange = { sleep = it },
+                    unit = "h"
+                )
+                GoalInputField(
+                    label = "Pasos",
+                    value = steps,
+                    onValueChange = { steps = it },
+                    unit = "pasos"
+                )
+                GoalInputField(
+                    label = "Ejercicio (minutos)",
+                    value = exercise,
+                    onValueChange = { exercise = it },
+                    unit = "min"
+                )
+                GoalInputField(
+                    label = "Calorías",
+                    value = calories,
+                    onValueChange = { calories = it },
+                    unit = "kcal"
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val goals = com.example.vivepasoapaso.data.model.DailyGoals(
+                        water = water.toDoubleOrNull() ?: 2.0,
+                        sleep = sleep.toDoubleOrNull() ?: 8.0,
+                        steps = steps.toIntOrNull() ?: 10000,
+                        exercise = exercise.toIntOrNull() ?: 30,
+                        calories = calories.toIntOrNull() ?: 2000
+                    )
+                    onGoalsSaved(goals)
+                }
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+//Diálogo para cambiar contraseña
+@Composable
+fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onPasswordChanged: () -> Unit
+) {
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val auth: FirebaseAuth? = try {
+        Firebase.auth
+    } catch (e: IllegalStateException) {
+        null
+    }
+    val user = auth?.currentUser
+
+    AlertDialog(
+        onDismissRequest = { if (!isLoading) onDismiss() },
+        title = { Text("Cambiar Contraseña") },
+        text = {
+            Column {
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = {
+                        currentPassword = it
+                        errorMessage = null
+                    },
+                    label = { Text("Contraseña actual") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = {
+                        newPassword = it
+                        errorMessage = null
+                    },
+                    label = { Text("Nueva contraseña") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = {
+                        confirmPassword = it
+                        errorMessage = null
+                    },
+                    label = { Text("Confirmar nueva contraseña") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (user == null) {
+                        errorMessage = "No hay usuario autenticado"
+                        return@Button
+                    }
+
+                    if (newPassword != confirmPassword) {
+                        errorMessage = "Las contraseñas no coinciden"
+                        return@Button
+                    }
+
+                    if (newPassword.length < 6) {
+                        errorMessage = "La contraseña debe tener al menos 6 caracteres"
+                        return@Button
+                    }
+
+                    isLoading = true
+
+                    //Reautenticar y cambiar contraseña
+                    val credential = EmailAuthProvider.getCredential(user.email ?: "", currentPassword)
+                    user.reauthenticate(credential).addOnCompleteListener { reauthTask ->
+                        if (reauthTask.isSuccessful) {
+                            user.updatePassword(newPassword).addOnCompleteListener { updateTask ->
+                                isLoading = false
+                                if (updateTask.isSuccessful) {
+                                    onPasswordChanged()
+                                    onDismiss()
+                                } else {
+                                    errorMessage = "Error al cambiar contraseña: ${updateTask.exception?.message}"
+                                }
+                            }
+                        } else {
+                            isLoading = false
+                            errorMessage = "Contraseña actual incorrecta"
+                        }
+                    }
+                },
+                enabled = !isLoading && currentPassword.isNotEmpty() &&
+                        newPassword.isNotEmpty() && confirmPassword.isNotEmpty()
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(if (isLoading) "Cambiando..." else "Cambiar")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+//Diálogo para seleccionar fuente de imagen
 @Composable
 fun ImageSourceDialog(
     onDismiss: () -> Unit,
@@ -395,7 +669,7 @@ fun ImageSourceDialog(
     )
 }
 
-// Diálogo de selección de idioma
+//Diálogo de selección de idioma
 @Composable
 fun LanguageSelectionDialog(
     currentLanguageCode: String,
@@ -474,7 +748,6 @@ fun ProfileOption(
     text: String,
     icon: ImageVector? = null,
     value: String? = null,
-    hasToggle: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
     val modifier = if (onClick != null) {
@@ -506,9 +779,7 @@ fun ProfileOption(
             Text(text = text, style = MaterialTheme.typography.bodyLarge)
         }
 
-        if (hasToggle) {
-            Switch(checked = true, onCheckedChange = {})
-        } else if (value != null) {
+        if (value != null) {
             Text(text = value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         } else {
             Icon(
@@ -520,170 +791,12 @@ fun ProfileOption(
     }
 }
 
-// Diálogo para personalizar metas
-@Composable
-fun PersonalizeGoalsDialog(
-    onDismiss: () -> Unit,
-    onGoalsSaved: (com.example.vivepasoapaso.data.model.DailyGoals) -> Unit,
-    currentGoals: com.example.vivepasoapaso.data.model.DailyGoals?,
-    isLoading: Boolean = false
-) {
-    var water by remember { mutableStateOf(currentGoals?.water?.toString() ?: "2.0") }
-    var sleep by remember { mutableStateOf(currentGoals?.sleep?.toString() ?: "8.0") }
-    var steps by remember { mutableStateOf(currentGoals?.steps?.toString() ?: "10000") }
-    var exercise by remember { mutableStateOf(currentGoals?.exercise?.toString() ?: "30") }
-    var calories by remember { mutableStateOf(currentGoals?.calories?.toString() ?: "2000") }
-
-    var waterError by remember { mutableStateOf<String?>(null) }
-    var sleepError by remember { mutableStateOf<String?>(null) }
-    var stepsError by remember { mutableStateOf<String?>(null) }
-    var exerciseError by remember { mutableStateOf<String?>(null) }
-    var caloriesError by remember { mutableStateOf<String?>(null) }
-
-    fun validateFields(): Boolean {
-        var isValid = true
-
-        waterError = null
-        val waterValue = water.toDoubleOrNull()
-        if (waterValue == null || waterValue < 0.5 || waterValue > 10) {
-            waterError = "Debe ser entre 0.5 y 10 litros"
-            isValid = false
-        }
-
-        sleepError = null
-        val sleepValue = sleep.toDoubleOrNull()
-        if (sleepValue == null || sleepValue < 4 || sleepValue > 16) {
-            sleepError = "Debe ser entre 4 y 16 horas"
-            isValid = false
-        }
-
-        stepsError = null
-        val stepsValue = steps.toIntOrNull()
-        if (stepsValue == null || stepsValue < 1000 || stepsValue > 50000) {
-            stepsError = "Debe ser entre 1,000 y 50,000 pasos"
-            isValid = false
-        }
-
-        exerciseError = null
-        val exerciseValue = exercise.toIntOrNull()
-        if (exerciseValue == null || exerciseValue < 5 || exerciseValue > 300) {
-            exerciseError = "Debe ser entre 5 y 300 minutos"
-            isValid = false
-        }
-
-        caloriesError = null
-        val caloriesValue = calories.toIntOrNull()
-        if (caloriesValue == null || caloriesValue < 500 || caloriesValue > 5000) {
-            caloriesError = "Debe ser entre 500 y 5,000 calorías"
-            isValid = false
-        }
-
-        return isValid
-    }
-
-    AlertDialog(
-        onDismissRequest = { if (!isLoading) onDismiss() },
-        title = {
-            Text("Personalizar Metas Diarias", style = MaterialTheme.typography.headlineSmall)
-        },
-        text = {
-            Column {
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Actualizando metas...")
-                        }
-                    }
-                } else {
-                    GoalInputField(
-                        label = "Agua (litros)",
-                        value = water,
-                        onValueChange = { water = it },
-                        unit = "L",
-                        error = waterError
-                    )
-                    GoalInputField(
-                        label = "Sueño (horas)",
-                        value = sleep,
-                        onValueChange = { sleep = it },
-                        unit = "h",
-                        error = sleepError
-                    )
-                    GoalInputField(
-                        label = "Pasos",
-                        value = steps,
-                        onValueChange = { steps = it },
-                        unit = "pasos",
-                        error = stepsError
-                    )
-                    GoalInputField(
-                        label = "Ejercicio (minutos)",
-                        value = exercise,
-                        onValueChange = { exercise = it },
-                        unit = "min",
-                        error = exerciseError
-                    )
-                    GoalInputField(
-                        label = "Calorías",
-                        value = calories,
-                        onValueChange = { calories = it },
-                        unit = "kcal",
-                        error = caloriesError
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (validateFields()) {
-                        val goals = com.example.vivepasoapaso.data.model.DailyGoals(
-                            water = water.toDouble(),
-                            sleep = sleep.toDouble(),
-                            steps = steps.toInt(),
-                            exercise = exercise.toInt(),
-                            calories = calories.toInt()
-                        )
-                        onGoalsSaved(goals)
-                    }
-                },
-                enabled = !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(if (isLoading) "Guardando..." else "Guardar")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isLoading
-            ) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
-
 @Composable
 fun GoalInputField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    unit: String,
-    error: String?
+    unit: String
 ) {
     Column(modifier = Modifier.padding(vertical = 8.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
@@ -693,7 +806,6 @@ fun GoalInputField(
                 onValueChange = onValueChange,
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                isError = error != null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = when (unit) {
                         "L", "h" -> KeyboardType.Decimal
@@ -703,14 +815,6 @@ fun GoalInputField(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(unit, style = MaterialTheme.typography.bodyMedium)
-        }
-        if (error != null) {
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 4.dp)
-            )
         }
     }
 }
