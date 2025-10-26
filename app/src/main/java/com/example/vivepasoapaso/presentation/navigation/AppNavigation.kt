@@ -7,7 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.vivepasoapaso.ui.screens.dashboard.DashboardScreen
 import com.example.vivepasoapaso.ui.screens.login.LoginScreen
 import com.example.vivepasoapaso.ui.screens.profile.ProfileScreen
-import com.example.vivepasoapaso.ui.screens.progress./*ProgressScreenDiagnostic*/ProgressScreen
+import com.example.vivepasoapaso.ui.screens.progress.ProgressScreen
 import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
 
 sealed class Screen(val route: String) {
@@ -15,7 +15,6 @@ sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard")
     object Progress : Screen("progress")
     object Profile : Screen("profile")
-
     object RegisterHabit : Screen("registerHabit")
 }
 
@@ -28,10 +27,16 @@ fun AppNavigation() {
         startDestination = Screen.Dashboard.route
     ) {
         composable(Screen.Login.route) {
-            LoginScreen()
+            LoginScreen(
+                onNavigateToDashboard = { navController.navigate(Screen.Dashboard.route) }
+            )
         }
         composable(Screen.Dashboard.route) {
-            DashboardScreen()
+            DashboardScreen(
+                onNavigateToProgress = { navController.navigate(Screen.Progress.route) },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToRegisterHabit = { navController.navigate(Screen.RegisterHabit.route) }
+            )
         }
         composable(Screen.Progress.route) {
             ProgressScreen(
@@ -44,7 +49,9 @@ fun AppNavigation() {
             )
         }
         composable(Screen.RegisterHabit.route) {
-            RegisterHabitScreen()
+            RegisterHabitScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }

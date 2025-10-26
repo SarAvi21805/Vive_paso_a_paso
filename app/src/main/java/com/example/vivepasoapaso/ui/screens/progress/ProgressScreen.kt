@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.vivepasoapaso.R
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.example.vivepasoapaso.presentation.screens.progress.ProgressIntent
 import com.example.vivepasoapaso.presentation.screens.progress.ProgressViewModel
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
@@ -34,7 +36,6 @@ fun ProgressScreen(
     val state by viewModel.state.collectAsState()
     val weeklyData by viewModel.weeklyData.collectAsState()
 
-    //Cargar datos reales al iniciar
     LaunchedEffect(Unit) {
         viewModel.refreshData()
     }
@@ -68,10 +69,11 @@ fun ProgressScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensionResource(id = R.dimen.padding_medium)),
+                .padding(dimensionResource(id = R.dimen.padding_medium))
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //Mostrar loading si está cargando
+            //El resto del contenido permanece igual...
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -92,7 +94,6 @@ fun ProgressScreen(
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_small))
                 ) {
                     Button(onClick = {
-                        //Recargar datos semanales
                         viewModel.refreshData()
                     }, modifier = Modifier.weight(1f)) {
                         Text(text = stringResource(id = R.string.weekly))
@@ -105,7 +106,7 @@ fun ProgressScreen(
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-                //Gráfico de barras con datos reales de Firebase
+                //Gráfico de barras
                 WeeklyBarChart(weeklyData = weeklyData)
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
@@ -120,7 +121,7 @@ fun ProgressScreen(
 
                 Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-                //Parte de la tarjeta con la racha
+                //Tarjeta de racha
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
@@ -151,7 +152,6 @@ fun ProgressScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
                 ) {
-                    //Sección de promedio de sueño
                     StatCard(
                         title = stringResource(id = R.string.avg_sleep),
                         currentValue = state.weeklySleepAverage,
@@ -159,7 +159,6 @@ fun ProgressScreen(
                         unit = "h",
                         modifier = Modifier.weight(1f)
                     )
-                    //Sección de total de pasos semanales
                     StatCard(
                         title = "Pasos Totales",
                         currentValue = state.totalWeeklySteps.toDouble(),
@@ -176,7 +175,6 @@ fun ProgressScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
                 ) {
-                    //Sección de agua
                     StatCard(
                         title = "Agua Promedio",
                         currentValue = state.weeklyWaterAverage,
@@ -184,7 +182,6 @@ fun ProgressScreen(
                         unit = "L",
                         modifier = Modifier.weight(1f)
                     )
-                    //Sección de ejercicio
                     StatCard(
                         title = "Ejercicio Promedio",
                         currentValue = state.weeklyExerciseAverage,
