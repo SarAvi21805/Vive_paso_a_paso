@@ -1,6 +1,10 @@
 package com.example.vivepasoapaso.ui.screens.registerhabit
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,62 +20,80 @@ import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterHabitScreen() {
+fun RegisterHabitScreen(
+    onBackClick: () -> Unit = {}
+) {
     Scaffold(
-        bottomBar = { BottomNavBar() }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.register_habit_title),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                onNavigateToDashboard = onBackClick,
+                onNavigateToProgress = { /* No needed here */ },
+                onNavigateToProfile = { /* No needed here */ }
+            )
+        }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues), // Padding para no superponerse con la barra
-            contentAlignment = Alignment.Center // Centrando el contenido
+                .padding(paddingValues)
+                .padding(horizontal = dimensionResource(id = R.dimen.padding_large))
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = dimensionResource(id = R.dimen.padding_large)),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Text(
+                text = stringResource(id = R.string.register_habit_title),
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Text(
+                text = stringResource(id = R.string.date_label),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+            HabitScrollableSelector()
+
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+            OutlinedTextField(
+                value = "45",
+                onValueChange = {},
+                label = { Text(stringResource(id = R.string.minutes_of_exercise)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+
+            OutlinedTextField(
+                value = "Clase de spinning, alta intensidad",
+                onValueChange = {},
+                label = { Text(stringResource(id = R.string.notes_optional)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
             ) {
-                Text(
-                    text = stringResource(id = R.string.register_habit_title),
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    text = stringResource(id = R.string.date_label),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-                HabitScrollableSelector() // Composable para los botones
-
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-                OutlinedTextField(
-                    value = "45",
-                    onValueChange = {},
-                    label = { Text(stringResource(id = R.string.minutes_of_exercise)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
-
-                OutlinedTextField(
-                    value = "Clase de spinning, alta intensidad",
-                    onValueChange = {},
-                    label = { Text(stringResource(id = R.string.notes_optional)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-                ) {
-                    Button(onClick = { /* No action */ }, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(id = R.string.save_button))
-                    }
-                    OutlinedButton(onClick = { /* No action */ }, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(id = R.string.cancel_button))
-                    }
+                Button(onClick = { /* No action */ }, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(id = R.string.save_button))
+                }
+                OutlinedButton(onClick = onBackClick, modifier = Modifier.weight(1f)) {
+                    Text(text = stringResource(id = R.string.cancel_button))
                 }
             }
         }

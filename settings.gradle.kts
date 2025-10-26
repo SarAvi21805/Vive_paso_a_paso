@@ -1,4 +1,4 @@
-pluginManagement {
+/*pluginManagement {
     repositories {
         google {
             content {
@@ -20,4 +20,22 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Vive+ paso a paso"
+include(":app")*/
+
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "Vive paso a paso"
 include(":app")

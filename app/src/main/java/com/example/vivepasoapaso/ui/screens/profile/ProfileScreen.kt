@@ -3,7 +3,9 @@ package com.example.vivepasoapaso.ui.screens.profile
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
@@ -34,6 +36,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.input.KeyboardType
 import kotlinx.coroutines.launch
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +48,7 @@ fun ProfileScreen(
 ) {
     val context = LocalContext.current
 
-    //Estados temporales - sin ViewModel por ahora
+    // Estados temporales
     val snackbarHostState = remember { SnackbarHostState() }
     val isUpdatingGoals = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -50,8 +56,9 @@ fun ProfileScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showGoalsDialog by remember { mutableStateOf(false) }
     var showImageSourceDialog by remember { mutableStateOf(false) }
+    var showPermissionRationale by remember { mutableStateOf(false) }
 
-    //Estados para datos de usuario (temporales)
+    // Estados para datos de usuario
     val currentLanguage = remember {
         mutableStateOf(LocaleManager.getDisplayLanguage(context))
     }
@@ -61,10 +68,10 @@ fun ProfileScreen(
     val userName = remember { mutableStateOf("Usuario") }
     val userEmail = remember { mutableStateOf("usuario@email.com") }
 
-    //Estado para la imagen de perfil
+    // Estado para la imagen de perfil
     var profileImage by remember { mutableStateOf(ImageManager.loadProfileImage(context)) }
 
-    //Launcher para la cámara
+    // Launcher para la cámara
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -73,7 +80,7 @@ fun ProfileScreen(
         }
     }
 
-    //Launcher para la galería
+    // Launcher para la galería
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -83,6 +90,33 @@ fun ProfileScreen(
             }
         }
     }
+
+    // Launchers para permisos
+    val cameraPermissionLauncher = PermissionManager.rememberCameraPermissionLauncher(
+        onPermissionGranted = {
+            // Abrir cámara después de obtener permiso
+            val file = ImageManager.createImageFile(context)
+            val uri = ImageManager.getImageUri(context, file)
+            cameraLauncher.launch(uri)
+        },
+        onPermissionDenied = {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Permiso de cámara denegado. Puedes activarlo en Configuración.")
+            }
+        }
+    )
+
+    val storagePermissionLauncher = PermissionManager.rememberStoragePermissionLauncher(
+        onPermissionGranted = {
+            // Abrir galería después de obtener permiso
+            galleryLauncher.launch("image/*")
+        },
+        onPermissionDenied = {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Permiso de almacenamiento denegado. Puedes activarlo en Configuración.")
+            }
+        }
+    )
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -102,147 +136,153 @@ fun ProfileScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensionResource(id = R.dimen.padding_medium)),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //Avatar con imagen o inicial
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .clickable { showImageSourceDialog = true },
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(dimensionResource(id = R.dimen.padding_medium))
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (profileImage != null) {
-                    Image(
-                        bitmap = profileImage!!.asImageBitmap(),
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = "Cambiar foto",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(18.dp)
+                // Avatar con imagen o inicial
+                Box(
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { showImageSourceDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (profileImage != null) {
+                        Image(
+                            bitmap = profileImage!!.asImageBitmap(),
+                            contentDescription = "Foto de perfil",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
                         )
-                    }
-                } else {
-                    Text(
-                        text = "U",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontSize = 48.sp
-                    )
 
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = "Agregar foto",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(18.dp)
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.CameraAlt,
+                                contentDescription = "Cambiar foto",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "U",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontSize = 48.sp
                         )
+
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.CameraAlt,
+                                contentDescription = "Agregar foto",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
-            Text(
-                text = userName.value,
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(
-                text = userEmail.value,
-                style = MaterialTheme.typography.bodyMedium
-            )
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+                Text(
+                    text = userName.value,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = userEmail.value,
+                    style = MaterialTheme.typography.bodyMedium
+                )
 
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-            //Preferencias del usuario
-            SectionTitle(title = stringResource(id = R.string.preferences))
-            ProfileOption(
-                text = stringResource(id = R.string.notifications),
-                icon = Icons.Default.Notifications,
-                hasToggle = true
-            )
-            ProfileOption(
-                text = stringResource(id = R.string.personalize_goals),
-                icon = Icons.Default.FitnessCenter,
-                onClick = { showGoalsDialog = true }
-            )
+                // Preferencias del usuario
+                SectionTitle(title = stringResource(id = R.string.preferences))
+                ProfileOption(
+                    text = stringResource(id = R.string.notifications),
+                    icon = Icons.Default.Notifications,
+                    hasToggle = true
+                )
+                ProfileOption(
+                    text = stringResource(id = R.string.personalize_goals),
+                    icon = Icons.Default.FitnessCenter,
+                    onClick = { showGoalsDialog = true }
+                )
 
-            ProfileOption(
-                text = stringResource(id = R.string.language),
-                icon = Icons.Default.Language,
-                value = currentLanguage.value,
-                onClick = { showLanguageDialog = true }
-            )
+                ProfileOption(
+                    text = stringResource(id = R.string.language),
+                    icon = Icons.Default.Language,
+                    value = currentLanguage.value,
+                    onClick = { showLanguageDialog = true }
+                )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
+                HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
 
-            //Cuenta y Seguridad
-            SectionTitle(title = stringResource(id = R.string.account_and_security))
-            ProfileOption(text = stringResource(id = R.string.change_password))
-            ProfileOption(text = stringResource(id = R.string.privacy_policy))
+                // Cuenta y Seguridad
+                SectionTitle(title = stringResource(id = R.string.account_and_security))
+                ProfileOption(text = stringResource(id = R.string.change_password))
+                ProfileOption(text = stringResource(id = R.string.privacy_policy))
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
+                HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
 
-            //Botones de comentario, ayuda y cierre de sesión
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-            ) {
-                OutlinedButton(onClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Función de comentarios próximamente")
+                // Botones de comentario, ayuda y cierre de sesión
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+                ) {
+                    OutlinedButton(onClick = {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Función de comentarios próximamente")
+                        }
+                    }, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(id = R.string.send_feedback))
                     }
-                }, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(id = R.string.send_feedback))
+                    OutlinedButton(onClick = {
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Centro de ayuda próximamente")
+                        }
+                    }, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(id = R.string.help_and_faq))
+                    }
                 }
-                OutlinedButton(onClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Centro de ayuda próximamente")
-                    }
-                }, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(id = R.string.help_and_faq))
+
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+                Button(
+                    onClick = {
+                        ImageManager.deleteProfileImage(context)
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Sesión cerrada correctamente")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(id = R.string.logout))
                 }
-            }
-
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-            Button(
-                onClick = {
-                    ImageManager.deleteProfileImage(context)
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Sesión cerrada correctamente")
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(text = stringResource(id = R.string.logout))
             }
         }
 
@@ -251,33 +291,43 @@ fun ProfileScreen(
             ImageSourceDialog(
                 onDismiss = { showImageSourceDialog = false },
                 onCameraSelected = {
+                    showImageSourceDialog = false
                     if (PermissionManager.hasCameraPermission(context)) {
                         val file = ImageManager.createImageFile(context)
                         val uri = ImageManager.getImageUri(context, file)
-                        if (ImageManager.saveProfileImage(context, ImageManager.uriToBitmap(context, uri)!!)) {
-                            cameraLauncher.launch(uri)
-                        }
+                        cameraLauncher.launch(uri)
                     } else {
-                        //En una implementación real, aquí pedirías permisos
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Permiso de cámara necesario")
-                        }
+                        //Solicitar permiso de cámara
+                        cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
                     }
                 },
                 onGallerySelected = {
+                    showImageSourceDialog = false
                     if (PermissionManager.hasStoragePermission(context)) {
                         galleryLauncher.launch("image/*")
                     } else {
-                        //En una implementación real, aquí pedirías permisos
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Permiso de almacenamiento necesario")
-                        }
+                        //Solicitar permisos de almacenamiento - CORREGIDO: sin @Composable
+                        storagePermissionLauncher.launch(PermissionManager.getStoragePermissions())
                     }
                 }
             )
         }
 
-        //Diálogo de selección de idioma
+        if (showPermissionRationale) {
+            AlertDialog(
+                onDismissRequest = { showPermissionRationale = false },
+                title = { Text("Permisos necesarios") },
+                text = {
+                    Text("Esta aplicación necesita acceso a la cámara y almacenamiento para que puedas tomar fotos de perfil y seleccionar imágenes de tu galería. Los permisos se usan solo para esta funcionalidad.")
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPermissionRationale = false }) {
+                        Text("Entendido")
+                    }
+                }
+            )
+        }
+
         if (showLanguageDialog) {
             LanguageSelectionDialog(
                 currentLanguageCode = currentLanguageCode.value,
@@ -287,7 +337,6 @@ fun ProfileScreen(
                     currentLanguage.value = LocaleManager.getDisplayLanguage(newContext)
                     currentLanguageCode.value = languageCode
                     showLanguageDialog = false
-                    //En una implementación real, aquí actualizarías en Firebase
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar("Idioma cambiado a ${if (languageCode == "es") "Español" else "English"}")
                     }
@@ -295,14 +344,12 @@ fun ProfileScreen(
             )
         }
 
-        //Diálogo para personalizar metas
         if (showGoalsDialog) {
             PersonalizeGoalsDialog(
                 onDismiss = { showGoalsDialog = false },
                 onGoalsSaved = { goals ->
                     isUpdatingGoals.value = true
                     coroutineScope.launch {
-                        //Simular actualización
                         kotlinx.coroutines.delay(1000)
                         isUpdatingGoals.value = false
                         snackbarHostState.showSnackbar("¡Metas actualizadas correctamente!")
@@ -316,7 +363,7 @@ fun ProfileScreen(
     }
 }
 
-//Diálogo para seleccionar fuente de imagen
+// Diálogo para seleccionar fuente de imagen
 @Composable
 fun ImageSourceDialog(
     onDismiss: () -> Unit,
@@ -330,7 +377,6 @@ fun ImageSourceDialog(
         confirmButton = {
             Button(onClick = {
                 onCameraSelected()
-                onDismiss()
             }) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -340,7 +386,6 @@ fun ImageSourceDialog(
         dismissButton = {
             TextButton(onClick = {
                 onGallerySelected()
-                onDismiss()
             }) {
                 Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -350,7 +395,7 @@ fun ImageSourceDialog(
     )
 }
 
-//Diálogo de selección de idioma
+// Diálogo de selección de idioma
 @Composable
 fun LanguageSelectionDialog(
     currentLanguageCode: String,
@@ -427,7 +472,7 @@ fun SectionTitle(title: String) {
 @Composable
 fun ProfileOption(
     text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    icon: ImageVector? = null,
     value: String? = null,
     hasToggle: Boolean = false,
     onClick: (() -> Unit)? = null
@@ -467,7 +512,7 @@ fun ProfileOption(
             Text(text = value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         } else {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.Default.ArrowDropDown,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp)
             )
@@ -475,7 +520,7 @@ fun ProfileOption(
     }
 }
 
-//Diálogo para personalizar metas (mantener igual)
+// Diálogo para personalizar metas
 @Composable
 fun PersonalizeGoalsDialog(
     onDismiss: () -> Unit,

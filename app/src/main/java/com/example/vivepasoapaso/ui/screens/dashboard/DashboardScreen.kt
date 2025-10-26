@@ -31,27 +31,45 @@ import androidx.compose.ui.unit.dp
 import com.example.vivepasoapaso.R
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 // Componente principal
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(
+    onNavigateToProgress: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToRegisterHabit: () -> Unit = {}
+) {
     Scaffold(
         topBar = { TopGreetingBar("Julían") },
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* No action */ },
-                containerColor = MaterialTheme.colorScheme.tertiary) {
+            FloatingActionButton(
+                onClick = onNavigateToRegisterHabit,
+                containerColor = MaterialTheme.colorScheme.tertiary
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar Hábito")
             }
         },
-        bottomBar = { BottomNavBar() }
+        bottomBar = {
+            BottomNavBar(
+                onNavigateToDashboard = { /* Ya estamos en dashboard */ },
+                onNavigateToProgress = onNavigateToProgress,
+                onNavigateToProfile = onNavigateToProfile
+            )
+        }
     ) { paddingValues ->
         // Contenedor principal del contenido de la pantalla
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding para no superponerse con las barras
-                .padding(horizontal = dimensionResource(id = R.dimen.padding_medium))
+                .padding(paddingValues)
+                .padding(horizontal = dimensionResource(id = R.dimen.padding_medium)) // Padding para no superponerse con las barras
+                .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
             DailyTipCard()
@@ -60,6 +78,7 @@ fun DashboardScreen() {
         }
     }
 }
+
 
 // Componentes pequeños y reutilizables
 
@@ -155,6 +174,7 @@ fun HabitGrid() {
     }
 }
 
+
 // Tarjeta individual (reutilizable) para mostrar el progreso de un hábito
 @Composable
 fun HabitCard(title: String, progressText: String, icon: ImageVector) {
@@ -184,25 +204,44 @@ fun HabitCard(title: String, progressText: String, icon: ImageVector) {
 
 // Para la barra de navegación inferior
 @Composable
-fun BottomNavBar() {
+fun BottomNavBar(
+    onNavigateToDashboard: () -> Unit,
+    onNavigateToProgress: () -> Unit,
+    onNavigateToProfile: () -> Unit
+) {
+    var selectedItem by mutableStateOf(0)
+
     NavigationBar {
         // Dashboard "seleccionado" (por ahora)
         NavigationBarItem(
-            selected = true,
-            onClick = { /* No action */ },
+            selected = selectedItem == 0,
+            onClick = {
+                selectedItem = 0
+                onNavigateToDashboard()
+            },
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
             label = { Text(stringResource(id = R.string.dashboard_nav)) },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+            )
         )
         NavigationBarItem(
-            selected = false,
-            onClick = { /* No action */ },
+            selected = selectedItem == 1,
+            onClick = {
+                selectedItem = 1
+                onNavigateToProgress()
+            },
             icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
             label = { Text(stringResource(id = R.string.stats_nav)) }
         )
         NavigationBarItem(
-            selected = false,
-            onClick = { /* No action */ },
+            selected = selectedItem == 2,
+            onClick = {
+                selectedItem = 2
+                onNavigateToProfile()
+            },
             icon = { Icon(Icons.Default.Person, contentDescription = null) },
             label = { Text(stringResource(id = R.string.profile_nav)) }
         )

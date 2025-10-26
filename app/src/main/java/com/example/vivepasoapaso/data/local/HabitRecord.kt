@@ -2,7 +2,7 @@
 
 package com.example.vivepasoapaso.data.local
 
-import androidx.room.Entity
+/*import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
 
@@ -15,4 +15,4 @@ data class HabitRecord(
     val amount: Double, // Para cantidades como litros
     val notes: String?,
     val date: Long // Fecha almacenada como un timestamp
-)
+)*/

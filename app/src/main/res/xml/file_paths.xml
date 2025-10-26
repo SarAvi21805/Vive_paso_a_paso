@@ -7,7 +7,10 @@
     <files-path name="images" path="images/" />
     <files-path name="exports" path="exports/" />
     <files-path name="profile_images" path="profile_images/" />
-    <cache-path name="cache" path="cache/" />
+    <files-path name="files" path="." />
+    <cache-path name="cache" path="." />
+    <external-files-path name="external_files" path="." />
+    <external-cache-path name="external_cache" path="." />
     <external-files-path name="external_profile_images" path="Pictures/VivePasoAPaso/" />
     <external-cache-path name="external_cache" path="Pictures/VivePasoAPaso/Cache/" />
 

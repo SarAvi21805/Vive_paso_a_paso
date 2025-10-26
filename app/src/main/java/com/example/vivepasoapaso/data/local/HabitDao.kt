@@ -2,7 +2,7 @@
 
 package com.example.vivepasoapaso.data.local
 
-import androidx.room.Dao
+/*import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 
@@ -13,4 +13,4 @@ interface HabitDao {
 
     @Query("SELECT * FROM habit_records WHERE userId = :userId AND date >= :startDate AND date < :endDate")
     suspend fun getHabitsForUserOnDate(userId: String, startDate: Long, endDate: Long): List<HabitRecord>
-}
+}*/
