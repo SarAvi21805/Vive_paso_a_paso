@@ -9,8 +9,7 @@ import java.util.*
 import java.util.Calendar
 import javax.inject.Inject
 
-//Inject constructor
-class HabitRepository (
+class HabitRepository @Inject constructor(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
     suspend fun saveHabitRecord(record: HabitRecord): Result<HabitRecord> {
