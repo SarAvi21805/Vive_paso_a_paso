@@ -3,6 +3,8 @@ package com.example.vivepasoapaso.ui.screens.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
@@ -20,11 +22,14 @@ import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import androidx.compose.ui.res.painterResource as painterResource1
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    onNavigateToDashboard: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(dimensionResource(id = R.dimen.padding_medium)),
+            .padding(dimensionResource(id = R.dimen.padding_medium))
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -56,7 +61,7 @@ fun LoginScreen() {
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
         Button(
-            onClick = { /* No action needed */ },
+            onClick = onNavigateToDashboard,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(id = R.string.login_button))
@@ -107,7 +112,6 @@ fun LoginScreen() {
                     modifier = Modifier.size(24.dp) // tamaño
                 )
             }
-
             // Botón para Facebook
             OutlinedButton(
                 onClick = { /* No action */ },

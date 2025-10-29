@@ -15,7 +15,6 @@ sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard")
     object Progress : Screen("progress")
     object Profile : Screen("profile")
-
     object RegisterHabit : Screen("registerHabit")
 }
 
@@ -28,13 +27,16 @@ fun AppNavigation() {
         startDestination = Screen.Dashboard.route
     ) {
         composable(Screen.Login.route) {
-            LoginScreen()
+            LoginScreen(
+                onNavigateToDashboard = { navController.navigate(Screen.Dashboard.route) }
+            )
         }
         composable(Screen.Dashboard.route) {
-            DashboardScreen()
-        }
-        composable(Screen.RegisterHabit.route) {
-            RegisterHabitScreen()
+            DashboardScreen(
+                onNavigateToProgress = { navController.navigate(Screen.Progress.route) },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToRegisterHabit = { navController.navigate(Screen.RegisterHabit.route) }
+            )
         }
         composable(Screen.Progress.route) {
             ProgressScreen(
@@ -43,6 +45,11 @@ fun AppNavigation() {
         }
         composable(Screen.Profile.route) {
             ProfileScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(Screen.RegisterHabit.route) {
+            RegisterHabitScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

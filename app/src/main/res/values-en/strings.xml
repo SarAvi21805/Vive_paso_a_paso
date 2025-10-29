@@ -23,6 +23,22 @@
     <string name="cancel_button">Cancel</string>
     <string name="your_progress">Your Progress</string>
     <string name="weekly">Weekly</string>
+    <string name="monthly">Monthly</string>
+    <string name="exercise">Exercise</string>
+    <string name="no_data_title">No data available of title</string>
+    <string name="no_data_message">No data available of message</string>
+    <string name="avg_water">Average water</string>
+    <string name="avg_exercise">Average exercise</string>
+    <string name="all_habits_weekly">All habits weekly</string>
+    <string name="all_habits_monthly">All habits monthly</string>
+    <string name="water_weekly">Water weekly</string>
+    <string name="water_monthly">Water monthly</string>
+    <string name="exercise_weekly">Exercise weekly</string>
+    <string name="exercise_monthly">Exercise monthly</string>
+    <string name="steps_weekly">Steps weekly</string>
+    <string name="steps_monthly">Steps monthly</string>
+    <string name="sleep_weekly">Sleep weekly</string>
+    <string name="sleep_monthly">Sleep monthly</string>
     <string name="all_habits">All habits</string>
     <string name="streak_title">%d day streak!</string>
     <string name="streak_subtitle">Keep going to unlock an achievement</string>
@@ -43,4 +59,5 @@
     <string name="current_language">Current language: English</string>
     <string name="select_language">Select language</string>
     <string name="language_updated">Language updated</string>
+    <string name="privacy_policy_content">At Vive Paso a Paso, we value and protect your privacy. This application collects only the necessary information to provide you with the healthy habits tracking service. Your personal data and habit records are stored securely in Firebase and are only used to show you your statistics and progress. We do not share your information with third parties without your explicit consent. You can delete your account and all your data at any time from the application settings.</string>
 </resources>
