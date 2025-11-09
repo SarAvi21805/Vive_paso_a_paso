@@ -59,5 +59,16 @@
     <string name="hydration">Hidratación</string>
     <string name="sleep">Sueño</string>
     <string name="steps">Pasos</string>
+    <string name="mood_happy">Feliz</string>
+    <string name="mood_sad">Triste</string>
+    <string name="mood_angry">Enojado</string>
+    <string name="mood_stressed">Estresado</string>
+    <string name="mood_irritable">Irritable</string>
+    <string name="mood_relaxed">Relajado</string>
+    <string name="mood_normal">Normal</string>
+    <string name="select_mood">Seleccionar estado de ánimo</string>
+    <string name="additional_notes">Notas adicionales</string>
+    <string name="daily_reminder_title">¡No olvides tus hábitos!</string>
+    <string name="daily_reminder_content">Registra tus hábitos del día para mantener tu racha</string>
     <string name="privacy_policy_content">En Vive Paso a Paso, valoramos y protegemos tu privacidad. Esta aplicación recopila únicamente la información necesaria para proporcionarte el servicio de seguimiento de hábitos saludables. Tus datos personales y registros de hábitos se almacenan de forma segura en Firebase y solo se utilizan para mostrarte tus estadísticas y progreso. No compartimos tu información con terceros sin tu consentimiento explícito. Puedes eliminar tu cuenta y todos tus datos en cualquier momento desde la configuración de la aplicación.</string>
 </resources>
