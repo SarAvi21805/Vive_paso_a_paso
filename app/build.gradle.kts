@@ -25,8 +25,12 @@ android {
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
             buildConfigField("String", "OPENAI_API_KEY", "\"${properties.getProperty("OPENAI_API_KEY", "")}\"")
+            buildConfigField("String", "NUTRITIONIX_APP_ID", "\"${properties.getProperty("NUTRITIONIX_APP_ID", "")}\"")
+            buildConfigField("String", "NUTRITIONIX_API_KEY", "\"${properties.getProperty("NUTRITIONIX_API_KEY", "")}\"")
         } else {
             buildConfigField("String", "OPENAI_API_KEY", "\"\"")
+            buildConfigField("String", "NUTRITIONIX_APP_ID", "\"\"")
+            buildConfigField("String", "NUTRITIONIX_API_KEY", "\"\"")
         }
     }
 
@@ -64,6 +68,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("androidx.compose.ui:ui:1.6.7")
+    implementation("androidx.compose.ui:ui-util:1.6.7")
+    implementation("androidx.compose.foundation:foundation:1.6.7")
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
@@ -80,6 +87,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.ui)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

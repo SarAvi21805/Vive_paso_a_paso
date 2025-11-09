@@ -3,6 +3,7 @@ package com.example.vivepasoapaso
 import android.app.Application
 import android.content.Context
 import com.example.vivepasoapaso.util.LocaleManager
+import com.example.vivepasoapaso.util.NotificationScheduler
 import com.google.firebase.FirebaseApp
 
 class VivePasoAPasoApplication : Application() {
@@ -14,8 +15,10 @@ class VivePasoAPasoApplication : Application() {
         try {
             FirebaseApp.initializeApp(this)
         } catch (e: IllegalStateException) {
-            //Firebase ya estaba inicializado, ignorar
         }
+
+        //Programar notificaciones diarias
+        NotificationScheduler.scheduleDailyReminder(this)
 
         instance = this
     }
