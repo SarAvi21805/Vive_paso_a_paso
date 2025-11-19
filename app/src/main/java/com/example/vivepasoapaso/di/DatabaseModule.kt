@@ -1,6 +1,7 @@
 package com.example.vivepasoapaso.di
 
 import android.content.Context
+import androidx.room.Room
 import com.example.vivepasoapaso.data.local.AppDatabase
 import com.example.vivepasoapaso.data.local.HabitDao
 import dagger.Module
@@ -17,7 +18,11 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return AppDatabase.getDatabase(context)
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "vive_database"
+        ).build()
     }
 
     @Provides

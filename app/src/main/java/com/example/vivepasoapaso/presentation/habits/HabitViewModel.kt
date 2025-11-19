@@ -5,15 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.model.HabitRecord
 import com.example.vivepasoapaso.data.model.HabitType
 import com.example.vivepasoapaso.data.repository.HabitRepository
+import dagger.hilt.android.lifecycle.HiltViewModel // Hilt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import java.util.Date
 
-class HabitViewModel : ViewModel() {
-
-    private val habitRepository = HabitRepository()
+@HiltViewModel
+class HabitViewModel @Inject constructor(private val habitRepository: HabitRepository) : ViewModel() {
 
     private val _habitState = MutableStateFlow<HabitState>(HabitState.Idle)
     val habitState: StateFlow<HabitState> = _habitState.asStateFlow()

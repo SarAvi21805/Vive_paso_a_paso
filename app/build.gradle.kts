@@ -11,10 +11,10 @@ if (localPropertiesFile.exists()) {
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    //alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
-    id("com.google.dagger.hilt.android")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.hilt.android) // Hilt Plugin
+    alias(libs.plugins.ksp) // KSP para el compilador de Hilt
 }
 
 android {
@@ -65,15 +65,19 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.11"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
 dependencies {
+    // KOTLIN - ¡ESTA LÍNEA ES CLAVE! Arregla el error de versión incompatible.
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.9.0"))
+
+    // ANDROIDX CORE & COMPOSE
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.androidx.compose.bom)) // El BOM ya incluye ui, graphics, etc.
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -83,24 +87,36 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // HILT (Inyección de Dependencias)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    // ROOM (Base de Datos Local) - ¡ESTO FALTABA! Arregla el error NonExistentClass.
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx) // Para soporte de Coroutines y Flow
+    ksp(libs.androidx.room.compiler)
+
+    // RETROFIT & MOSHI (Para las APIs)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
     implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // FIREBASE
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
+    // COROUTINES (Sin duplicados)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.0") // Para generación de código
-    // Hilt (Inyección de Dependencias)
-    implementation("com.google.dagger:hilt-android:2.48")
-    ksp("com.google.dagger:hilt-compiler:2.48")
-
+    // TESTS
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
