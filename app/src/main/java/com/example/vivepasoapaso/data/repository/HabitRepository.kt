@@ -1,68 +1,139 @@
 package com.example.vivepasoapaso.data.repository
 
-import com.example.vivepasoapaso.data.model.HabitRecord
+import android.util.Log
+import com.example.vivepasoapaso.BuildConfig
+import com.example.vivepasoapaso.data.local.HabitDao
+import com.example.vivepasoapaso.data.local.HabitEntity // BD local
+import com.example.vivepasoapaso.data.model.HabitRecord // Lógica de negocio y Firebase
 import com.example.vivepasoapaso.data.model.HabitType
+import com.example.vivepasoapaso.data.remote.EdamamApiService
+import com.example.vivepasoapaso.data.remote.OpenWeatherApiService
+import com.example.vivepasoapaso.data.remote.OpenWeatherResponse
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
-import java.util.*
 import java.util.Calendar
+import java.util.Date
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class HabitRepository @Inject constructor(
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val edamamApi: EdamamApiService,
+    private val openWeatherApi: OpenWeatherApiService,
+    private val habitDao: HabitDao,
+    private val firestore: FirebaseFirestore
 ) {
+
+    // Funciones de API's externas
+    suspend fun getCaloriesForFood(foodQuery: String): Double? {
+        return try {
+            val response = edamamApi.getNutritionDetails(
+                appId = BuildConfig.EDAMAM_APP_ID,
+                appKey = BuildConfig.EDAMAM_APP_KEY,
+                food = foodQuery
+            )
+            response.totalNutrients.calories.quantity
+        } catch (e: Exception) {
+            Log.e("HabitRepository", "Error fetching calories from Edamam", e)
+            null
+        }
+    }
+
+    suspend fun getCurrentWeather(lat: Double, lon: Double): OpenWeatherResponse? {
+        return try {
+            openWeatherApi.getWeather(
+                lat = lat,
+                lon = lon,
+                apiKey = BuildConfig.OPENWEATHER_API_KEY
+            )
+        } catch (e: Exception) {
+            Log.e("HabitRepository", "Error fetching weather from OpenWeather", e)
+            null
+        }
+    }
+
+    fun getLocalHabitsForDateRange(startDate: Long, endDate: Long): Flow<List<HabitEntity>> {
+        return habitDao.getHabitsForUserOnDate(startDate, endDate)
+    }
+    // Funciones de datos de hábitos
+
+    /**Guarda en Firebase y luego en la BD local.*/
     suspend fun saveHabitRecord(record: HabitRecord): Result<HabitRecord> {
         return try {
             val recordWithId = if (record.id.isEmpty()) {
-                record.copy(id = db.collection("habits").document().id)
+                record.copy(id = firestore.collection("habits").document().id)
             } else {
                 record
             }
+            firestore.collection("habits").document(recordWithId.id).set(recordWithId).await()
 
-            db.collection("habits").document(recordWithId.id).set(recordWithId).await()
+            // Lógica de BD Local (Room)
+            val habitEntity = HabitEntity(
+                id = 0, // Room autogenerará el ID local
+                name = recordWithId.type.name,
+                type = recordWithId.type.name,
+                amount = recordWithId.value,
+                date = recordWithId.recordDate.toDate().time
+            )
+            habitDao.insertHabit(habitEntity) // Guardamos en Room
+
             Result.success(recordWithId)
         } catch (e: Exception) {
+            Log.e("HabitRepository", "Error saving habit record", e)
             Result.failure(e)
         }
     }
 
-    suspend fun getHabitRecords(userId: String, startDate: Date, endDate: Date): List<HabitRecord> {
+    suspend fun getHabitRecords(
+        userId: String,
+        startDate: Date,
+        endDate: Date
+    ): List<HabitRecord> {
         return try {
-            val snapshot = db.collection("habits")
+            val snapshot = firestore.collection("habits")
                 .whereEqualTo("user_id", userId)
                 .whereGreaterThanOrEqualTo("record_date", Timestamp(startDate))
                 .whereLessThanOrEqualTo("record_date", Timestamp(endDate))
                 .get()
                 .await()
-
             snapshot.documents.mapNotNull { it.toObject(HabitRecord::class.java) }
         } catch (e: Exception) {
+            Log.e("HabitRepository", "Error getting habit records", e)
             emptyList()
         }
     }
 
-    suspend fun getHabitRecordsByType(userId: String, type: HabitType, limit: Int = 30): List<HabitRecord> {
+    suspend fun getHabitRecordsByType(
+        userId: String,
+        type: HabitType,
+        limit: Int = 30
+    ): List<HabitRecord> {
         return try {
-            val snapshot = db.collection("habits")
+            val snapshot = firestore.collection("habits")
                 .whereEqualTo("user_id", userId)
                 .whereEqualTo("type", type)
-                .orderBy("record_date", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .orderBy(
+                    "record_date",
+                    com.google.firebase.firestore.Query.Direction.DESCENDING
+                )
                 .limit(limit.toLong())
                 .get()
                 .await()
-
             snapshot.documents.mapNotNull { it.toObject(HabitRecord::class.java) }
         } catch (e: Exception) {
+            Log.e("HabitRepository", "Error getting records by type", e)
             emptyList()
         }
     }
 
     suspend fun deleteHabitRecord(recordId: String): Result<Unit> {
         return try {
-            db.collection("habits").document(recordId).delete().await()
+            firestore.collection("habits").document(recordId).delete().await()
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("HabitRepository", "Error deleting record", e)
             Result.failure(e)
         }
     }
@@ -70,19 +141,11 @@ class HabitRepository @Inject constructor(
     suspend fun getTodayHabitRecords(userId: String): List<HabitRecord> {
         val calendar = Calendar.getInstance()
         val startOfDay = calendar.apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
         }.time
-
         val endOfDay = calendar.apply {
-            set(Calendar.HOUR_OF_DAY, 23)
-            set(Calendar.MINUTE, 59)
-            set(Calendar.SECOND, 59)
-            set(Calendar.MILLISECOND, 999)
+            set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59)
         }.time
-
         return getHabitRecords(userId, startOfDay, endOfDay)
     }
 
@@ -91,9 +154,7 @@ class HabitRepository @Inject constructor(
         calendar.add(Calendar.DAY_OF_YEAR, -7)
         val weekAgo = calendar.time
         val now = Date()
-
         val records = getHabitRecords(userId, weekAgo, now)
-
         return records.groupBy { it.type }
             .mapValues { (_, records) ->
                 records.sumOf { it.value } / records.size.coerceAtLeast(1)

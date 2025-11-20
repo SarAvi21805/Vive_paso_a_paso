@@ -5,7 +5,9 @@ import android.content.Context
 import com.example.vivepasoapaso.service.NotificationService
 import com.example.vivepasoapaso.util.LocaleManager
 import com.google.firebase.FirebaseApp
+import dagger.hilt.android.HiltAndroidApp
 
+@HiltAndroidApp
 class VivePasoAPasoApplication : Application() {
 
     override fun onCreate() {
