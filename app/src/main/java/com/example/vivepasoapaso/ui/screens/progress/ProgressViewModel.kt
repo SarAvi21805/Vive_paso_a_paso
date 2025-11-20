@@ -4,22 +4,28 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.repository.ChatRepository
 import com.example.vivepasoapaso.data.repository.ChatRepositoryImpl
+import com.example.vivepasoapaso.data.repository.HabitRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 import kotlin.random.Random
 
-class ProgressViewModel : ViewModel() {
+@HiltViewModel
+class ProgressViewModel @Inject constructor(
+    private val habitRepository: HabitRepository
+) : ViewModel() {
     private val chatRepository: ChatRepository = ChatRepositoryImpl()
 
     //Estados para filtros
-    private val _selectedPeriod = MutableStateFlow("weekly") //"weekly" o "monthly"
+    private val _selectedPeriod = MutableStateFlow("weekly") // "weekly" o "monthly"
     val selectedPeriod: StateFlow<String> = _selectedPeriod.asStateFlow()
 
-    private val _selectedHabitFilter = MutableStateFlow("all") //"all", "water", "sleep", "steps", "exercise"
+    private val _selectedHabitFilter = MutableStateFlow("all") // "all", "water", "sleep", "steps", "exercise"
     val selectedHabitFilter: StateFlow<String> = _selectedHabitFilter.asStateFlow()
 
     private val _state = MutableStateFlow(ProgressState())
@@ -65,17 +71,11 @@ class ProgressViewModel : ViewModel() {
             _state.value = _state.value.copy(isLoading = true)
 
             try {
-                kotlinx.coroutines.delay(800)
+                val userId = "current_user_id" // Reemplazar con ID real del usuario
 
-                _state.value = _state.value.copy(
-                    sleepHours = 8.0,
-                    steps = 10000,
-                    waterLiters = 2.0,
-                    exerciseMinutes = 30
-                )
-
-                loadWeeklyData()
-                loadMonthlyData()
+                // Cargar datos reales desde Firebase
+                loadWeeklyData(userId)
+                loadMonthlyData(userId)
                 getAIRecommendation()
 
                 _state.value = _state.value.copy(isLoading = false)
@@ -91,27 +91,121 @@ class ProgressViewModel : ViewModel() {
         }
     }
 
-    private fun loadWeeklyData() {
-        viewModelScope.launch {
-            try {
-                val sampleData = generateSampleWeeklyData()
-                _weeklyData.value = sampleData
-                calculateWeeklyAverages(sampleData)
-            } catch (e: Exception) {
-                loadSampleData()
-            }
+    private suspend fun loadWeeklyData(userId: String) {
+        try {
+            val calendar = Calendar.getInstance()
+            val endDate = calendar.time
+            calendar.add(Calendar.DAY_OF_YEAR, -6)
+            val startDate = calendar.time
+
+            val records = habitRepository.getHabitRecords(userId, startDate, endDate)
+            val weeklyStats = processRecordsToDailyStats(records, true)
+            _weeklyData.value = weeklyStats
+            calculateWeeklyAverages(weeklyStats)
+
+            // Calcular racha real
+            val streak = calculateRealStreak(userId)
+            _state.value = _state.value.copy(streakDays = streak)
+
+        } catch (e: Exception) {
+            loadSampleData()
         }
     }
 
-    private fun loadMonthlyData() {
-        viewModelScope.launch {
-            try {
-                val sampleData = generateSampleMonthlyData()
-                _monthlyData.value = sampleData
-            } catch (e: Exception) {
-                loadSampleData()
+    private suspend fun loadMonthlyData(userId: String) {
+        try {
+            val calendar = Calendar.getInstance()
+            val endDate = calendar.time
+            calendar.add(Calendar.DAY_OF_YEAR, -29)
+            val startDate = calendar.time
+
+            val records = habitRepository.getHabitRecords(userId, startDate, endDate)
+            val monthlyStats = processRecordsToDailyStats(records, false)
+            _monthlyData.value = monthlyStats
+        } catch (e: Exception) {
+            // Manejar error
+        }
+    }
+
+    private fun processRecordsToDailyStats(records: List<com.example.vivepasoapaso.data.model.HabitRecord>, isWeekly: Boolean): List<DailyStats> {
+        val groupedByDay = records.groupBy { record ->
+            val calendar = Calendar.getInstance()
+            calendar.time = record.recordDate.toDate()
+            calendar.set(Calendar.HOUR_OF_DAY, 0)
+            calendar.set(Calendar.MINUTE, 0)
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+            calendar.time
+        }
+
+        val dailyStatsList = mutableListOf<DailyStats>()
+        val dateFormat = if (isWeekly) SimpleDateFormat("EEE", Locale.getDefault()) else SimpleDateFormat("dd/MM", Locale.getDefault())
+
+        groupedByDay.forEach { (date, recordsForDay) ->
+            val dayLabel = if (isWeekly) dateFormat.format(date).take(3) else dateFormat.format(date)
+
+            var water = 0.0
+            var sleep = 0.0
+            var steps = 0
+            var exercise = 0
+            var nutrition = 0.0
+
+            recordsForDay.forEach { record ->
+                when (record.type) {
+                    com.example.vivepasoapaso.data.model.HabitType.WATER -> water += record.value
+                    com.example.vivepasoapaso.data.model.HabitType.SLEEP -> sleep += record.value
+                    com.example.vivepasoapaso.data.model.HabitType.STEPS -> steps += record.value.toInt()
+                    com.example.vivepasoapaso.data.model.HabitType.EXERCISE -> exercise += record.value.toInt()
+                    com.example.vivepasoapaso.data.model.HabitType.NUTRITION -> nutrition += record.value
+                    else -> {}
+                }
+            }
+
+            dailyStatsList.add(DailyStats(
+                date = date,
+                dayLabel = dayLabel,
+                water = water,
+                sleep = sleep,
+                steps = steps,
+                exercise = exercise,
+                nutrition = nutrition
+            ))
+        }
+
+        return dailyStatsList.sortedBy { it.date }
+    }
+
+    private suspend fun calculateRealStreak(userId: String): Int {
+        var streak = 0
+        val calendar = Calendar.getInstance()
+
+        // Verificar días consecutivos con al menos un hábito registrado
+        for (i in 0 until 30) {
+            calendar.time = Date()
+            calendar.add(Calendar.DAY_OF_YEAR, -i)
+
+            val dayStart = calendar.apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.time
+
+            val dayEnd = calendar.apply {
+                set(Calendar.HOUR_OF_DAY, 23)
+                set(Calendar.MINUTE, 59)
+                set(Calendar.SECOND, 59)
+                set(Calendar.MILLISECOND, 999)
+            }.time
+
+            val dayRecords = habitRepository.getHabitRecords(userId, dayStart, dayEnd)
+            if (dayRecords.isNotEmpty()) {
+                streak++
+            } else {
+                break
             }
         }
+        return streak
     }
 
     private fun generateSampleWeeklyData(): List<DailyStats> {
@@ -125,10 +219,10 @@ class ProgressViewModel : ViewModel() {
             val day = calendar.time
 
             //Datos más realistas para gráficas semanales
-            val water = 1.5 + (Random.nextDouble() * 1.0)
-            val sleep = 6.5 + (Random.nextDouble() * 2.0)
-            val steps = 8000 + (Random.nextDouble() * 4000).toInt()
-            val exercise = 20 + (Random.nextDouble() * 40).toInt()
+            val water = 1.5 + (kotlin.random.Random.nextDouble() * 1.0)
+            val sleep = 6.5 + (kotlin.random.Random.nextDouble() * 2.0)
+            val steps = 8000 + (kotlin.random.Random.nextDouble() * 4000).toInt()
+            val exercise = 20 + (kotlin.random.Random.nextDouble() * 40).toInt()
 
             sampleData.add(DailyStats(
                 date = day,
@@ -137,7 +231,7 @@ class ProgressViewModel : ViewModel() {
                 sleep = sleep,
                 steps = steps,
                 exercise = exercise,
-                nutrition = 1800.0 + (Random.nextDouble() * 400)
+                nutrition = 1800.0 + (kotlin.random.Random.nextDouble() * 400)
             ))
         }
 
@@ -159,10 +253,10 @@ class ProgressViewModel : ViewModel() {
             val baseSteps = 8000 + (week * 500)
             val baseExercise = 20 + (week * 5)
 
-            val water = baseWater + (Random.nextDouble() * 0.3)
-            val sleep = baseSleep + (Random.nextDouble() * 0.5)
-            val steps = baseSteps + (Random.nextDouble() * 1000).toInt()
-            val exercise = baseExercise + (Random.nextDouble() * 10).toInt()
+            val water = baseWater + (kotlin.random.Random.nextDouble() * 0.3)
+            val sleep = baseSleep + (kotlin.random.Random.nextDouble() * 0.5)
+            val steps = baseSteps + (kotlin.random.Random.nextDouble() * 1000).toInt()
+            val exercise = baseExercise + (kotlin.random.Random.nextDouble() * 10).toInt()
 
             sampleData.add(DailyStats(
                 date = calendar.time,
@@ -189,10 +283,10 @@ class ProgressViewModel : ViewModel() {
         val selectedHabit = _selectedHabitFilter.value
 
         val chartData = if (selectedHabit == "all") {
-            //Modo múltiples hábitos - Gráfica de líneas
+            //Modo múltiples hábitos - Gráfica de líneas (como la primera imagen)
             processMultiHabitLineData(currentData)
         } else {
-            //Modo hábito individual - Gráfica de barras
+            //Modo hábito individual - Gráfica de barras (como la segunda imagen)
             processSingleHabitBarData(currentData, selectedHabit)
         }
 
@@ -277,7 +371,7 @@ class ProgressViewModel : ViewModel() {
             ),
             ChartDataset(
                 label = "Pasos",
-                values = data.map { it.steps.toFloat() / 1000 }, //Convertir a miles
+                values = data.map { it.steps.toFloat() / 1000 }, // Convertir a miles
                 color = habitColors["steps"] ?: 0xFFFF9800,
                 chartType = "line"
             ),
@@ -314,20 +408,18 @@ class ProgressViewModel : ViewModel() {
     }
 
     private fun loadSampleData() {
-        viewModelScope.launch {
-            val sampleData = generateSampleWeeklyData()
-            _weeklyData.value = sampleData
-            calculateWeeklyAverages(sampleData)
-            updateChartData()
+        val sampleData = generateSampleWeeklyData()
+        _weeklyData.value = sampleData
+        calculateWeeklyAverages(sampleData)
+        updateChartData()
 
-            _state.value = _state.value.copy(
-                streakDays = calculateStreak(sampleData),
-                totalWeeklySteps = 75600,
-                weeklyWaterAverage = 1.8,
-                weeklySleepAverage = 7.2,
-                weeklyExerciseAverage = 35.0
-            )
-        }
+        _state.value = _state.value.copy(
+            streakDays = 5,
+            totalWeeklySteps = 75600,
+            weeklyWaterAverage = 1.8,
+            weeklySleepAverage = 7.2,
+            weeklyExerciseAverage = 35.0
+        )
     }
 
     private fun calculateWeeklyAverages(weeklyStats: List<DailyStats>) {
@@ -347,7 +439,6 @@ class ProgressViewModel : ViewModel() {
         )
     }
 
-    // Función que recibe List<DailyStats>
     private fun calculateStreak(weeklyStats: List<DailyStats>): Int {
         var streak = 0
         for (stats in weeklyStats.reversed()) {
@@ -432,7 +523,7 @@ class ProgressViewModel : ViewModel() {
     }
 }
 
-//Data classes mejoradas para gráficas
+//Data classes para gráficas
 data class DailyStats(
     val date: Date,
     val dayLabel: String, //Etiqueta para el eje X ("Lun", "Mar", "1", "2", etc.)
