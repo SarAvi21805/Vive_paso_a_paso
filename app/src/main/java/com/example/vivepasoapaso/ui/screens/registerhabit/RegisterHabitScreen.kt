@@ -40,14 +40,6 @@ enum class HabitOption(val displayName: String) {
     FOOD("Alimentación")
 }
 
-// Definición de los tipos de hábito como enum
-enum class HabitOption(val displayName: String) {
-    WATER("Agua"),
-    SLEEP("Sueño"),
-    EXERCISE("Ejercicio"),
-    FOOD("Alimentación")
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterHabitScreen(
@@ -195,7 +187,7 @@ fun RegisterHabitScreen(
             }
         }
     }
-}*/
+}
 
 @Composable
 fun MoodSelector(
@@ -257,7 +249,7 @@ fun HabitScrollableSelector(
             }
         }
     }
-}*/
+}
 
 @Composable
 fun DynamicHabitInput(

@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
 import com.google.firebase.Timestamp
+import dagger.hilt.android.lifecycle.HiltViewModel
 
+@HiltViewModel
 class HabitViewModel @Inject constructor(private val habitRepository: HabitRepository) : ViewModel() {
 
     private val _habitState = MutableStateFlow<HabitState>(HabitState.Idle)
