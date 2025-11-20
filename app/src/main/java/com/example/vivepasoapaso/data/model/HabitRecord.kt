@@ -17,6 +17,8 @@ data class HabitRecord(
 
     val notes: String? = null,
 
+    val mood: String? = null,
+
     @PropertyName("record_date")
     val recordDate: Timestamp = Timestamp.now(),
 

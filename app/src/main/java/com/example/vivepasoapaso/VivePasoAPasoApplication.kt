@@ -2,8 +2,8 @@ package com.example.vivepasoapaso
 
 import android.app.Application
 import android.content.Context
+import com.example.vivepasoapaso.service.NotificationService
 import com.example.vivepasoapaso.util.LocaleManager
-import com.example.vivepasoapaso.util.NotificationScheduler
 import com.google.firebase.FirebaseApp
 
 class VivePasoAPasoApplication : Application() {
@@ -11,20 +11,19 @@ class VivePasoAPasoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        //Inicializar Firebase explícitamente
         try {
             FirebaseApp.initializeApp(this)
         } catch (e: IllegalStateException) {
         }
 
-        //Programar notificaciones diarias
-        NotificationScheduler.scheduleDailyReminder(this)
+        // Inicializar notificaciones
+        NotificationService.createNotificationChannel(this)
+        NotificationService.scheduleDailyReminder(this)
 
         instance = this
     }
 
     override fun attachBaseContext(base: Context) {
-        //Aplicar el locale guardado antes de que se creen las vistas
         super.attachBaseContext(LocaleManager.setLocale(base, LocaleManager.getCurrentLanguage(base)))
     }
 
