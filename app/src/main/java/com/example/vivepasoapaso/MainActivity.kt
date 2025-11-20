@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
         // Esta línea ya estaba bien, la dejamos aquí.
         //NotificationScheduler.scheduleNotification(this)
-
+a
         setContent {
             VivePasoAPasoTheme {
                 // 2. Usamos LaunchedEffect para pedir el permiso de forma segura al iniciar la UI

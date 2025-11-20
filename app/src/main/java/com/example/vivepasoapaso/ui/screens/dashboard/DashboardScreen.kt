@@ -44,13 +44,15 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToProgress: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToRegisterHabit: () -> Unit = {}
+    onNavigateToRegisterHabit: () -> Unit = {},
+    viewModel: HabitViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val habitViewModel: HabitViewModel = viewModel()
