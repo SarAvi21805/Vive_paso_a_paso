@@ -1,19 +1,21 @@
 package com.example.vivepasoapaso.presentation.habits
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.model.HabitRecord
 import com.example.vivepasoapaso.data.model.HabitType
 import com.example.vivepasoapaso.data.repository.HabitRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Date
+import javax.inject.Inject
+import com.google.firebase.Timestamp
 
-class HabitViewModel : ViewModel() {
-
-    private val habitRepository = HabitRepository()
+@HiltViewModel
+class HabitViewModel @Inject constructor(private val habitRepository: HabitRepository) : ViewModel() {
 
     private val _habitState = MutableStateFlow<HabitState>(HabitState.Idle)
     val habitState: StateFlow<HabitState> = _habitState.asStateFlow()
@@ -59,6 +61,49 @@ class HabitViewModel : ViewModel() {
 
     fun clearHabitState() {
         _habitState.value = HabitState.Idle
+    }
+
+    fun testApi(food: String) {
+        viewModelScope.launch {
+            val calories = habitRepository.getCaloriesForFood(food)
+            if (calories != null) {
+                Log.d("HabitViewModel", "Las calorías de '$food' son: $calories")
+            } else {
+                Log.e("HabitViewModel", "Falló la llamada a la API para '$food'")
+            }
+        }
+    }
+
+    fun calculateAndSaveFoodHabit(foodDescription: String, userId: String) {
+        _habitState.value = HabitState.Loading
+        viewModelScope.launch {
+            // Llamada al repositorio para obtener las calorías desde la API
+            val calories = habitRepository.getCaloriesForFood(foodDescription)
+
+            if (calories != null && calories > 0) {
+                // Creación del objeto HabitRecord
+                val record = HabitRecord(
+                    // id generado en el repositorio
+                    userId = userId,
+                    type = HabitType.NUTRITION,
+                    value = calories,
+                    recordDate = Timestamp.now() // fecha actual
+                )
+
+                // Llamada a la función para guardar
+                val result = habitRepository.saveHabitRecord(record)
+                _habitState.value = when {
+                    result.isSuccess -> HabitState.Success
+                    else -> HabitState.Error(result.exceptionOrNull()?.message ?: "Error al guardar")
+                }
+            } else {
+                // API falla o no encontró calorías
+                _habitState.value = HabitState.Error("No se pudieron calcular las calorías para '$foodDescription'")
+            }
+
+            // Actualizar registros del día
+            loadTodayRecords(userId)
+        }
     }
 }
 

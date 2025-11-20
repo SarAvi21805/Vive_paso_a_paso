@@ -9,8 +9,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.vivepasoapaso.presentation.navigation.AppNavigation
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
+import dagger.hilt.android.AndroidEntryPoint
+
 //import com.example.vivepasoapaso.util.LocaleManager
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
