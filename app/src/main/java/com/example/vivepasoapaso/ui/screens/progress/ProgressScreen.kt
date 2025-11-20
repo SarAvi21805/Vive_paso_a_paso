@@ -27,13 +27,17 @@ import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.graphics.Color
+import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressScreen(
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    viewModel: ProgressViewModel = hiltViewModel()
 ) {
-    val viewModel: ProgressViewModel = viewModel()
+    //val viewModel: ProgressViewModel = viewModel()
     val state by viewModel.state.collectAsState()
     val weeklyData by viewModel.weeklyData.collectAsState()
     val monthlyData by viewModel.monthlyData.collectAsState()

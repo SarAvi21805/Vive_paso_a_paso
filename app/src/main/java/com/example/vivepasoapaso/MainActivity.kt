@@ -11,15 +11,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import com.example.vivepasoapaso.presentation.navigation.AppNavigation // Tu import correcto
+import com.example.vivepasoapaso.presentation.navigation.AppNavigation
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import com.example.vivepasoapaso.util.NotificationScheduler
-import dagger.hilt.android.AndroidEntryPoint // Mantenemos el import de Hilt
+import dagger.hilt.android.AndroidEntryPoint // Hilt
 
-@AndroidEntryPoint // Mantenemos la anotación de Hilt
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    // 1. Preparamos el lanzador para solicitar el permiso de notificaciones
+    // Preparamos el lanzador para solicitar el permiso de notificaciones
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -33,12 +33,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Esta línea ya estaba bien, la dejamos aquí.
-        //NotificationScheduler.scheduleNotification(this)
-a
         setContent {
             VivePasoAPasoTheme {
-                // 2. Usamos LaunchedEffect para pedir el permiso de forma segura al iniciar la UI
+                // Usamos LaunchedEffect para pedir el permiso de forma segura al iniciar la UI
                 LaunchedEffect(Unit) {
                     askNotificationPermission()
                 }
@@ -53,7 +50,7 @@ a
         }
     }
 
-    // 3. Creamos la función que verifica la versión de Android y solicita el permiso
+    // Creamos la función que verifica la versión de Android y solicita el permiso
     private fun askNotificationPermission() {
         // Solo es necesario pedir permiso en Android 13 (API 33) o superior
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

@@ -31,6 +31,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import javax.inject.Inject
 
 // Definición de los tipos de hábito como enum
 enum class HabitOption(val displayName: String) {
@@ -44,7 +46,7 @@ enum class HabitOption(val displayName: String) {
 @Composable
 fun RegisterHabitScreen(
     onBackClick: () -> Unit = {},
-    viewModel: HabitViewModel = viewModel()
+    viewModel: HabitViewModel = hiltViewModel()
 ) {
     // Estados para manejar el formulario dinámico
     var selectedHabit by remember { mutableStateOf(HabitOption.EXERCISE) }
