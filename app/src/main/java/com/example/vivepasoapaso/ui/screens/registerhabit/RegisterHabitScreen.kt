@@ -34,7 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import javax.inject.Inject
 
-// Definición de los tipos de hábito como enum
+// Definición de tipos de hábito como enum
 enum class HabitOption(val displayName: String) {
     WATER("Agua"),
     SLEEP("Sueño"),
