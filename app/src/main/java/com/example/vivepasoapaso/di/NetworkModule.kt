@@ -10,14 +10,18 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    // Proveedor para Moshi (convertidor JSON)
     @Provides
     @Singleton
     fun provideMoshi(): Moshi {
@@ -26,23 +30,48 @@ object NetworkModule {
             .build()
     }
 
+    // Proveedor para el Cliente HTTP (con logging para depurar)
     @Provides
     @Singleton
-    fun provideEdamamApiService(moshi: Moshi): EdamamApiService {
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+            .build()
+    }
+
+    // Proveedor para cada API
+    @Provides
+    @Singleton
+    @Named("Edamam")
+    fun provideEdamamRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.edamam.com/")
+            .baseUrl("https://api.edamam.com")
+            .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
-            .create(EdamamApiService::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideOpenWeatherApiService(moshi: Moshi): OpenWeatherApiService {
+    @Named("OpenWeather")
+    fun provideOpenWeatherRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org/")
+            .baseUrl("https://api.openweathermap.org")
+            .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
-            .create(OpenWeatherApiService::class.java)
+    }
+
+    // Provedores de cada APIService
+    @Provides
+    @Singleton
+    fun provideEdamamApiService(@Named("Edamam") retrofit: Retrofit): EdamamApiService {
+        return retrofit.create(EdamamApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOpenWeatherApiService(@Named("OpenWeather") retrofit: Retrofit): OpenWeatherApiService {
+        return retrofit.create(OpenWeatherApiService::class.java)
     }
 }

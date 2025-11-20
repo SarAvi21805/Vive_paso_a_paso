@@ -70,14 +70,14 @@ android {
 }
 
 dependencies {
-    // KOTLIN - ¡ESTA LÍNEA ES CLAVE! Arregla el error de versión incompatible.
+    // KOTLIN
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.9.0"))
 
     // ANDROIDX CORE & COMPOSE
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom)) // El BOM ya incluye ui, graphics, etc.
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -91,8 +91,9 @@ dependencies {
     // HILT (Inyección de Dependencias)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
-    // ROOM (Base de Datos Local) - ¡ESTO FALTABA! Arregla el error NonExistentClass.
+    // ROOM (Base de Datos Local)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx) // Para soporte de Coroutines y Flow
     ksp(libs.androidx.room.compiler)
