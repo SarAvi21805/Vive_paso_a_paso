@@ -3,6 +3,7 @@ package com.example.vivepasoapaso
 import android.app.Application
 import android.content.Context
 import com.example.vivepasoapaso.util.LocaleManager
+import com.example.vivepasoapaso.util.NotificationScheduler
 import com.google.firebase.FirebaseApp
 import dagger.hilt.android.HiltAndroidApp
 
@@ -16,6 +17,9 @@ class VivePasoAPasoApplication : Application() {
             FirebaseApp.initializeApp(this)
         } catch (e: IllegalStateException) {
         }
+
+        //Programar notificaciones diarias
+        NotificationScheduler.scheduleDailyReminder(this)
 
         instance = this
     }

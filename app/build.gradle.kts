@@ -35,8 +35,12 @@ android {
         if (localPropertiesFile.exists()) {
             properties.load(localPropertiesFile.inputStream())
             buildConfigField("String", "OPENAI_API_KEY", "\"${properties.getProperty("OPENAI_API_KEY", "")}\"")
+            buildConfigField("String", "NUTRITIONIX_APP_ID", "\"${properties.getProperty("NUTRITIONIX_APP_ID", "")}\"")
+            buildConfigField("String", "NUTRITIONIX_API_KEY", "\"${properties.getProperty("NUTRITIONIX_API_KEY", "")}\"")
         } else {
             buildConfigField("String", "OPENAI_API_KEY", "\"\"")
+            buildConfigField("String", "NUTRITIONIX_APP_ID", "\"\"")
+            buildConfigField("String", "NUTRITIONIX_API_KEY", "\"\"")
         }
 
         buildConfigField("String", "EDAMAM_APP_ID", "\"${localProperties.getProperty("EDAMAM_APP_ID")}\"")
@@ -82,6 +86,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("androidx.compose.ui:ui:1.6.7")
+    implementation("androidx.compose.ui:ui-util:1.6.7")
+    implementation("androidx.compose.foundation:foundation:1.6.7")
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")

@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Live Step by Step</string>
-    <string name="login_button">Login</string>
     <string name="email_placeholder">Email</string>
     <string name="password_placeholder">Password</string>
     <string name="create_account">Create Account</string>
@@ -59,5 +58,17 @@
     <string name="current_language">Current language: English</string>
     <string name="select_language">Select language</string>
     <string name="language_updated">Language updated</string>
+    <string name="mood_happy">Happy</string>
+    <string name="mood_sad">Sad</string>
+    <string name="mood_angry">Angry</string>
+    <string name="mood_stressed">Stressed</string>
+    <string name="mood_irritable">Irritable</string>
+    <string name="mood_relaxed">Relaxed</string>
+    <string name="mood_normal">Normal</string>
+    <string name="select_mood">Select mood</string>
+    <string name="additional_notes">Aditional notes</string>
+    <string name="daily_reminder_title">Don\'t forget to register your habits!</string>
+    <string name="daily_reminder_content">Register your daily reminders to keep track of your habits.</string>
+    <string name="login_button">Login</string>
     <string name="privacy_policy_content">At Vive Paso a Paso, we value and protect your privacy. This application collects only the necessary information to provide you with the healthy habits tracking service. Your personal data and habit records are stored securely in Firebase and are only used to show you your statistics and progress. We do not share your information with third parties without your explicit consent. You can delete your account and all your data at any time from the application settings.</string>
 </resources>

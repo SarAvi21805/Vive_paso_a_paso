@@ -16,10 +16,10 @@ class ProgressViewModel : ViewModel() {
     private val chatRepository: ChatRepository = ChatRepositoryImpl()
 
     //Estados para filtros
-    private val _selectedPeriod = MutableStateFlow("weekly") // "weekly" o "monthly"
+    private val _selectedPeriod = MutableStateFlow("weekly") //"weekly" o "monthly"
     val selectedPeriod: StateFlow<String> = _selectedPeriod.asStateFlow()
 
-    private val _selectedHabitFilter = MutableStateFlow("all") // "all", "water", "sleep", "steps", "exercise"
+    private val _selectedHabitFilter = MutableStateFlow("all") //"all", "water", "sleep", "steps", "exercise"
     val selectedHabitFilter: StateFlow<String> = _selectedHabitFilter.asStateFlow()
 
     private val _state = MutableStateFlow(ProgressState())
@@ -189,10 +189,10 @@ class ProgressViewModel : ViewModel() {
         val selectedHabit = _selectedHabitFilter.value
 
         val chartData = if (selectedHabit == "all") {
-            //Modo múltiples hábitos - Gráfica de líneas (como la primera imagen)
+            //Modo múltiples hábitos - Gráfica de líneas
             processMultiHabitLineData(currentData)
         } else {
-            //Modo hábito individual - Gráfica de barras (como la segunda imagen)
+            //Modo hábito individual - Gráfica de barras
             processSingleHabitBarData(currentData, selectedHabit)
         }
 
@@ -277,7 +277,7 @@ class ProgressViewModel : ViewModel() {
             ),
             ChartDataset(
                 label = "Pasos",
-                values = data.map { it.steps.toFloat() / 1000 }, // Convertir a miles
+                values = data.map { it.steps.toFloat() / 1000 }, //Convertir a miles
                 color = habitColors["steps"] ?: 0xFFFF9800,
                 chartType = "line"
             ),
@@ -314,18 +314,20 @@ class ProgressViewModel : ViewModel() {
     }
 
     private fun loadSampleData() {
-        val sampleData = generateSampleWeeklyData()
-        _weeklyData.value = sampleData
-        calculateWeeklyAverages(sampleData)
-        updateChartData()
+        viewModelScope.launch {
+            val sampleData = generateSampleWeeklyData()
+            _weeklyData.value = sampleData
+            calculateWeeklyAverages(sampleData)
+            updateChartData()
 
-        _state.value = _state.value.copy(
-            streakDays = 5,
-            totalWeeklySteps = 75600,
-            weeklyWaterAverage = 1.8,
-            weeklySleepAverage = 7.2,
-            weeklyExerciseAverage = 35.0
-        )
+            _state.value = _state.value.copy(
+                streakDays = calculateStreak(sampleData),
+                totalWeeklySteps = 75600,
+                weeklyWaterAverage = 1.8,
+                weeklySleepAverage = 7.2,
+                weeklyExerciseAverage = 35.0
+            )
+        }
     }
 
     private fun calculateWeeklyAverages(weeklyStats: List<DailyStats>) {
@@ -345,6 +347,7 @@ class ProgressViewModel : ViewModel() {
         )
     }
 
+    // Función que recibe List<DailyStats>
     private fun calculateStreak(weeklyStats: List<DailyStats>): Int {
         var streak = 0
         for (stats in weeklyStats.reversed()) {
