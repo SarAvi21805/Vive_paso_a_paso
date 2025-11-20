@@ -1,20 +1,23 @@
 package com.example.vivepasoapaso.ui.screens.dashboard
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
@@ -25,54 +28,63 @@ import androidx.compose.ui.unit.dp
 import com.example.vivepasoapaso.R
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.vivepasoapaso.presentation.habits.HabitViewModel
 import com.example.vivepasoapaso.util.ImageManager
-import android.graphics.Bitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import kotlinx.coroutines.delay
+import com.example.vivepasoapaso.data.model.HabitRecord
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
 
-// Componente principal
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToProgress: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToRegisterHabit: () -> Unit = {}
+    onNavigateToRegisterHabit: () -> Unit = {},
+    viewModel: HabitViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val auth: FirebaseAuth? = try {
-        FirebaseAuth.getInstance()
-    } catch (e: IllegalStateException) {
-        null
-    }
+    val habitViewModel: HabitViewModel = viewModel()
+    val auth = Firebase.auth
+    val currentUser = auth.currentUser
 
-    val currentUser = auth?.currentUser
-    val userName = currentUser?.displayName ?: "Usuario"
-
-    // Estado para la imagen de perfil con remember
-    val profileImage by remember {
-        mutableStateOf<Bitmap?>(ImageManager.loadProfileImage(context))
-    }
-
-    // Estado para los últimos hábitos registrados
-    var recentHabits by remember { mutableStateOf<List<HabitRecord>>(emptyList()) }
+    // Estado para los hábitos de hoy
+    var todayHabits by remember { mutableStateOf<List<HabitRecord>>(emptyList()) }
+    var weatherTip by remember { mutableStateOf("") }
+    val profileImage = remember { ImageManager.loadProfileImage(context) }
 
     LaunchedEffect(Unit) {
-        // Simular carga de datos
-        delay(500)
-        recentHabits = listOf(
-            HabitRecord("Ejercicio", "45 min", "Hoy", Icons.Default.DirectionsWalk),
-            HabitRecord("Agua", "1.5 L", "Hoy", Icons.Default.WaterDrop),
-            HabitRecord("Sueño", "7.2 h", "Ayer", Icons.Default.Bedtime),
-            HabitRecord("Alimentación", "1800 cal", "Ayer", Icons.Default.Restaurant)
-        )
+        // Cargar hábitos de hoy
+        currentUser?.uid?.let { userId ->
+            habitViewModel.loadTodayRecords(userId)
+        }
+        // Cargar consejo del clima
+        weatherTip = habitViewModel.loadWeatherTip(context)
     }
 
+    // Observar cambios en los registros
+    val todayRecords by habitViewModel.todayRecords.collectAsState()
+    todayHabits = todayRecords
+
     Scaffold(
-        topBar = { TopGreetingBar(userName, profileImage) },
+        topBar = {
+            TopGreetingBar(
+                userName = currentUser?.displayName ?: "Usuario",
+                profileImage = profileImage,
+                onProfileClick = onNavigateToProfile
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToRegisterHabit,
@@ -98,29 +110,21 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
-            // Mensaje motivacional
-            MotivationCard(
-                onRegisterHabit = onNavigateToRegisterHabit
-            )
+            // Mostrar mensaje si no hay hábitos hoy
+            if (todayHabits.isEmpty()) {
+                EncouragementCard(onAddHabit = onNavigateToRegisterHabit)
+                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+            }
 
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
-
-            // Tip del día
-            DailyTipCard()
-
+            DailyTipCard(weatherTip = weatherTip)
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
-
-            // Últimos hábitos registrados
-            RecentHabitsSection(
-                habits = recentHabits,
-                onRegisterHabit = onNavigateToRegisterHabit
-            )
+            HabitGrid(todayHabits = todayHabits)
         }
     }
 }
 
 @Composable
-fun TopGreetingBar(userName: String, profileImage: Bitmap?) {
+fun TopGreetingBar(userName: String, profileImage: android.graphics.Bitmap?, onProfileClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -135,77 +139,77 @@ fun TopGreetingBar(userName: String, profileImage: Bitmap?) {
             text = stringResource(id = R.string.greeting, userName),
             style = MaterialTheme.typography.headlineMedium
         )
-
-        // Círculo del perfil con imagen o inicial
-        if (profileImage != null) {
-            Image(
-                bitmap = profileImage.asImageBitmap(),
-                contentDescription = "Foto de perfil",
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            // Mostrar inicial si no hay imagen
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold
+        // Círculo del perfil con imagen clickeable
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .clickable { onProfileClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            if (profileImage != null) {
+                Image(
+                    bitmap = profileImage.asImageBitmap(),
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = userName.take(1).uppercase(),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun MotivationCard(
-    onRegisterHabit: () -> Unit
-) {
+fun EncouragementCard(onAddHabit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(
             modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium))
         ) {
             Text(
-                text = "¡Es hora de registrar tus hábitos!",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                text = "¡Mantén tu racha!",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.padding_small)))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Completa tu día registrando tus hábitos actuales para mantener tu progreso",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                text = "Registra tus hábitos de hoy para continuar con tu progreso.",
+                style = MaterialTheme.typography.bodyMedium
             )
-
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.padding_small)))
-            Button(
-                onClick = onRegisterHabit,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Registrar Hábitos de Hoy")
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(onClick = onAddHabit) {
+                Text("Registrar hábitos ahora")
             }
         }
     }
 }
 
 @Composable
-fun DailyTipCard() {
+fun DailyTipCard(weatherTip: String) {
+    val tip = if (weatherTip.isNotEmpty()) {
+        weatherTip
+    } else {
+        stringResource(id = R.string.daily_tip_content)
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -218,7 +222,7 @@ fun DailyTipCard() {
             )
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.padding_extra_small)))
             Text(
-                text = stringResource(id = R.string.daily_tip_content),
+                text = tip,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -226,110 +230,95 @@ fun DailyTipCard() {
 }
 
 @Composable
-fun RecentHabitsSection(
-    habits: List<HabitRecord>,
-    onRegisterHabit: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
+fun HabitGrid(todayHabits: List<HabitRecord>) {
+    // Calcular progresos basados en los hábitos de hoy
+    val waterProgress = calculateProgress(todayHabits, "WATER")
+    val sleepProgress = calculateProgress(todayHabits, "SLEEP")
+    val exerciseProgress = calculateProgress(todayHabits, "EXERCISE")
+    val nutritionProgress = calculateProgress(todayHabits, "NUTRITION")
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
         ) {
-            Text(
-                text = "Tus últimos hábitos",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            HabitCard(
+                title = stringResource(id = R.string.hydration),
+                progressText = waterProgress,
+                icon = Icons.Default.WaterDrop
             )
-
-            TextButton(onClick = onRegisterHabit) {
-                Text("Ver todos")
-            }
+            HabitCard(
+                title = stringResource(id = R.string.nutrition),
+                progressText = nutritionProgress,
+                icon = Icons.Default.Restaurant
+            )
         }
-
-        Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.padding_medium)))
-
-        if (habits.isEmpty()) {
-            // Mensaje cuando no hay hábitos registrados
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "No hay hábitos registrados",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = onRegisterHabit) {
-                            Text("Registrar primer hábito")
-                        }
-                    }
-                }
-            }
-        } else {
-            // Lista de hábitos recientes
-            Column(
-                verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-            ) {
-                habits.forEach { habit ->
-                    RecentHabitCard(habit = habit)
-                }
-            }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+        ) {
+            HabitCard(
+                title = stringResource(id = R.string.sleep),
+                progressText = sleepProgress,
+                icon = Icons.Default.Bedtime
+            )
+            HabitCard(
+                title = stringResource(id = R.string.steps),
+                progressText = exerciseProgress,
+                icon = Icons.Default.DirectionsWalk
+            )
         }
     }
 }
 
+private fun calculateProgress(habits: List<HabitRecord>, type: String): String {
+    val typeHabits = habits.filter { it.type.name == type }
+    return when (type) {
+        "WATER" -> {
+            val total = typeHabits.sumOf { it.value }
+            "${String.format("%.1f", total)} / 2.0 Lts"
+        }
+        "SLEEP" -> {
+            val total = typeHabits.sumOf { it.value }
+            "${String.format("%.1f", total)}h"
+        }
+        "EXERCISE" -> {
+            val total = typeHabits.sumOf { it.value }
+            "${total.toInt()} min"
+        }
+        "NUTRITION" -> {
+            val total = typeHabits.sumOf { it.value }
+            "${total.toInt()} kcal"
+        }
+        else -> "0"
+    }
+}
+
 @Composable
-fun RecentHabitCard(habit: HabitRecord) {
+fun HabitCard(title: String, progressText: String, icon: ImageVector) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .height(150.dp), // Altura fija
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(dimensionResource(id = R.dimen.padding_medium)),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Icon(
-                imageVector = habit.icon,
-                contentDescription = habit.type,
-                modifier = Modifier.size(32.dp),
+                imageVector = icon,
+                contentDescription = title,
+                modifier = Modifier.size(dimensionResource(id = R.dimen.icon_size_medium)),
                 tint = MaterialTheme.colorScheme.primary
             )
-
-            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = habit.type,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = habit.value,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            Column {
+                Text(text = title, style = MaterialTheme.typography.titleSmall)
+                Text(text = progressText, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
             }
-
-            Text(
-                text = habit.date,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -343,6 +332,7 @@ fun BottomNavBar(
     var selectedItem by remember { mutableStateOf(0) }
 
     NavigationBar {
+        // Dashboard "seleccionado" (por ahora)
         NavigationBarItem(
             selected = selectedItem == 0,
             onClick = {
@@ -377,14 +367,6 @@ fun BottomNavBar(
         )
     }
 }
-
-// Data class para representar un hábito registrado
-data class HabitRecord(
-    val type: String,
-    val value: String,
-    val date: String,
-    val icon: ImageVector
-)
 
 @Preview(showBackground = true)
 @Composable

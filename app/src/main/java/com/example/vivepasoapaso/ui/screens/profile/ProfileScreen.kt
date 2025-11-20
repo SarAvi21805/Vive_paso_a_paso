@@ -60,6 +60,7 @@ fun ProfileScreen(
     } catch (e: IllegalStateException) {
         null
     }
+    val currentUser = auth?.currentUser
 
     //Estados
     val snackbarHostState = remember { SnackbarHostState() }
@@ -161,7 +162,7 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //Avatar
+            //Avatar con ícono de cámara enfrente
             Box(
                 modifier = Modifier
                     .size(120.dp)
@@ -181,13 +182,14 @@ fun ProfileScreen(
                     )
                 } else {
                     Text(
-                        text = "U",
+                        text = currentUser?.displayName?.take(1)?.uppercase() ?: "U",
                         style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontSize = 48.sp
                     )
                 }
 
+                // Ícono de cámara enfrente del avatar
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -209,11 +211,11 @@ fun ProfileScreen(
 
             //Información del usuario
             Text(
-                text = auth?.currentUser?.displayName ?: "Usuario",
+                text = currentUser?.displayName ?: "Usuario",
                 style = MaterialTheme.typography.headlineSmall
             )
             Text(
-                text = auth?.currentUser?.email ?: "usuario@email.com",
+                text = currentUser?.email ?: "usuario@email.com",
                 style = MaterialTheme.typography.bodyMedium
             )
 
@@ -275,20 +277,15 @@ fun ProfileScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
 
-            //Cuenta y Seguridad
-            SectionTitle(title = stringResource(id = R.string.account_and_security))
-            ProfileOption(
-                text = stringResource(id = R.string.change_password),
-                onClick = {
-                    if (auth?.currentUser != null) {
-                        showChangePasswordDialog = true
-                    } else {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Debes iniciar sesión para cambiar la contraseña")
-                        }
-                    }
-                }
-            )
+            //Cuenta y Seguridad - Solo mostrar si el usuario está logueado
+            if (currentUser != null) {
+                SectionTitle(title = stringResource(id = R.string.account_and_security))
+                ProfileOption(
+                    text = stringResource(id = R.string.change_password),
+                    onClick = { showChangePasswordDialog = true }
+                )
+            }
+
             ProfileOption(
                 text = stringResource(id = R.string.privacy_policy),
                 icon = Icons.Default.Info,
@@ -297,12 +294,21 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-            //Botón de cerrar sesión
-            Button(
-                onClick = { showLogoutDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(text = stringResource(id = R.string.logout))
+            //Botón de cerrar sesión o iniciar sesión
+            if (currentUser != null) {
+                Button(
+                    onClick = { showLogoutDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(id = R.string.logout))
+                }
+            } else {
+                Button(
+                    onClick = { onNavigateToLogin() },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(text = stringResource(id = R.string.login_button))
+                }
             }
         }
 
@@ -368,8 +374,8 @@ fun ProfileScreen(
             )
         }
 
-        //Diálogo para cambiar contraseña
-        if (showChangePasswordDialog) {
+        //Diálogo para cambiar contraseña - Solo si el usuario está logueado
+        if (showChangePasswordDialog && currentUser != null) {
             ChangePasswordDialog(
                 onDismiss = { showChangePasswordDialog = false },
                 onPasswordChanged = {
@@ -406,22 +412,33 @@ fun ProfileScreen(
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
-                title = { Text("Cerrar sesión") },
-                text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
+                title = {
+                    Text(
+                        text = if (LocaleManager.getCurrentLanguage(context) == "es") "Cerrar sesión" else "Logout"
+                    )
+                },
+                text = {
+                    Text(
+                        text = if (LocaleManager.getCurrentLanguage(context) == "es")
+                            "¿Estás seguro de que quieres cerrar sesión?"
+                        else
+                            "Are you sure you want to logout?"
+                    )
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             showLogoutDialog = false
-                            authViewModel.signOut()
+                            auth?.signOut()
                             onNavigateToLogin()
                         }
                     ) {
-                        Text("Sí, cerrar sesión")
+                        Text(if (LocaleManager.getCurrentLanguage(context) == "es") "Sí, cerrar sesión" else "Yes, logout")
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Cancelar")
+                        Text(if (LocaleManager.getCurrentLanguage(context) == "es") "Cancelar" else "Cancel")
                     }
                 }
             )

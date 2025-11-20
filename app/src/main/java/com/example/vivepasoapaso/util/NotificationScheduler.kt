@@ -3,34 +3,34 @@ package com.example.vivepasoapaso.util
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequest
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
 object NotificationScheduler {
 
-    private const val NOTIFICATION_WORK_NAME = "daily_habit_reminder"
+    private const val WORK_TAG = "notification_work"
 
-    fun scheduleDailyReminder(context: Context) {
+    fun scheduleNotification(context: Context) {
         val constraints = Constraints.Builder()
-            .setRequiresBatteryNotLow(true)
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+            .setRequiresCharging(false)
             .build()
 
-        val notificationWork: PeriodicWorkRequest =
-            PeriodicWorkRequestBuilder<NotificationWorker>(24, TimeUnit.HOURS)
-                .setInitialDelay(1, TimeUnit.HOURS) //Primera notificación en 1 hora
-                .setConstraints(constraints)
-                .build()
+        // Programa el trabajo para que se repita cada 24 horas
+        val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(24, TimeUnit.HOURS)
+            .setConstraints(constraints)
+            .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            NOTIFICATION_WORK_NAME,
-            ExistingPeriodicWorkPolicy.REPLACE,
-            notificationWork
+            WORK_TAG,
+            ExistingPeriodicWorkPolicy.KEEP, // Mantiene el trabajo existente si ya está programado
+            workRequest
         )
     }
 
-    fun cancelDailyReminder(context: Context) {
-        WorkManager.getInstance(context).cancelUniqueWork(NOTIFICATION_WORK_NAME)
+    fun cancelNotifications(context: Context) {
+        WorkManager.getInstance(context).cancelAllWorkByTag(WORK_TAG)
     }
 }
