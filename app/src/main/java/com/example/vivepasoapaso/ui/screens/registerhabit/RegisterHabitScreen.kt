@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import javax.inject.Inject
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
+import java.util.Date
 
 // Definición de tipos de hábito como enum
 enum class HabitOption(val displayName: String) {
@@ -107,20 +111,28 @@ fun RegisterHabitScreen(
             }
 
             if (showDatePicker) {
-                // Implementación básica de selector de fecha
-                AlertDialog(
+                val datePickerState = rememberDatePickerState()
+                DatePickerDialog(
                     onDismissRequest = { showDatePicker = false },
-                    title = { Text("Seleccionar fecha") },
-                    text = {
-                        // En una implementación real, usarías DatePicker de Material3
-                        Text("Selecciona una fecha para el registro")
-                    },
                     confirmButton = {
+                        TextButton(
+                            onClick = {
+                                // Obtiene la fecha seleccionada en milisegundos y la convierte a Date
+                                datePickerState.selectedDateMillis?.let {
+                                    selectedDate = Date(it)
+                                }
+                                showDatePicker = false
+                            }
+                        ) { Text("Aceptar") }
+                    },
+                    dismissButton = {
                         TextButton(onClick = { showDatePicker = false }) {
-                            Text("Aceptar")
+                            Text("Cancelar")
                         }
                     }
-                )
+                ) {
+                    DatePicker(state = datePickerState)
+                }
             }
 
             HabitScrollableSelector(

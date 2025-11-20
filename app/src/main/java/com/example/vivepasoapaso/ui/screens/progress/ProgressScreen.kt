@@ -239,7 +239,7 @@ fun ProgressScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(text = stringResource(id = R.string.streak_subtitle))
+                            Text(text = stringResource(id = R.string.streak_subtitle, state.streakDays))
                         }
                     }
                 }
@@ -514,7 +514,7 @@ fun AIRecommendationCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recomendación de Vita",
+                    text = stringResource(id = R.string.ai_recommendation_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

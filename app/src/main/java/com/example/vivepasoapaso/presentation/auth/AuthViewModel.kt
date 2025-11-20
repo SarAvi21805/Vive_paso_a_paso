@@ -4,12 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.model.User
 import com.example.vivepasoapaso.data.repository.AuthRepository
+import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
+@HiltViewModel
+class AuthViewModel @Inject constructor(private val auth: FirebaseAuth): ViewModel() {
+
     private val authRepository = AuthRepository()
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)

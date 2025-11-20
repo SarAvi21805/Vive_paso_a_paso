@@ -73,4 +73,6 @@
     <string name="privacy_policy_content">En Vive Paso a Paso, valoramos y protegemos tu privacidad. Esta aplicación recopila únicamente la información necesaria para proporcionarte el servicio de seguimiento de hábitos saludables. Tus datos personales y registros de hábitos se almacenan de forma segura en Firebase y solo se utilizan para mostrarte tus estadísticas y progreso. No compartimos tu información con terceros sin tu consentimiento explícito. Puedes eliminar tu cuenta y todos tus datos en cualquier momento desde la configuración de la aplicación.</string>
     <string name="notification_channel_name">Recordatorios de hábitos</string>
     <string name="notification_channel_description">Notificaciones para recordarte registrar tus hábitos</string>
+    <string name="ai_recommendation_title">Recomendación de Vita</string>
+    <string name="personalize_goals_title">Personalizar Metas Diarias</string>
 </resources>

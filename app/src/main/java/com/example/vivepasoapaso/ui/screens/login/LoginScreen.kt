@@ -17,14 +17,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vivepasoapaso.R
+import com.example.vivepasoapaso.presentation.auth.AuthState
+import com.example.vivepasoapaso.presentation.auth.AuthViewModel
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import androidx.compose.ui.res.painterResource as painterResource1
 
 @Composable
 fun LoginScreen(
-    onNavigateToDashboard: () -> Unit = {}
+    onNavigateToDashboard: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {}
 ) {
+    val viewModel: AuthViewModel = hiltViewModel()
+    val authState by viewModel.authState.collectAsState()
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    // Navega automáticamente si el login es exitoso
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onNavigateToDashboard()
+            viewModel.clearAuthState() // Limpia el estado
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -42,8 +59,8 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
+            value = email,
+            onValueChange = { email = it },
             label = { Text(stringResource(id = R.string.email_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
             modifier = Modifier.fillMaxWidth()
@@ -51,14 +68,27 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
+            value = password,
+            onValueChange = { password = it },
             label = { Text(stringResource(id = R.string.password_placeholder)) },
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+
+        if (authState is AuthState.Loading) {
+            CircularProgressIndicator()
+        } else {
+            Button(
+                onClick = { viewModel.signIn(email, password) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = email.isNotBlank() && password.isNotBlank()
+            ) {
+                Text(stringResource(id = R.string.login_button))
+            }
+        }
+        Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
 
         Button(
             onClick = onNavigateToDashboard,
@@ -72,10 +102,10 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            TextButton(onClick = { /* No action */ }) {
+            TextButton(onClick = onNavigateToRegister) {
                 Text(stringResource(id = R.string.create_account))
             }
-            TextButton(onClick = { /* No action */ }) {
+            TextButton(onClick = { /* Olvidó contraseña */ }) {
                 Text(stringResource(id = R.string.forgot_password))
             }
         }

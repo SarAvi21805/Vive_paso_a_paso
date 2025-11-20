@@ -39,13 +39,13 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.vivepasoapaso.presentation.auth.AuthViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,13 +54,32 @@ fun ProfileScreen(
     onNavigateToLogin: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val authViewModel: AuthViewModel = viewModel()
-    val auth: FirebaseAuth? = try {
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+    /*val auth: FirebaseAuth? = try {
         Firebase.auth
     } catch (e: IllegalStateException) {
         null
     }
-    val currentUser = auth?.currentUser
+    //val currentUser = auth?.currentUser
+    if (currentUser != null) {
+        // Muestra el botón de "Cerrar Sesión"
+        Button(
+            onClick = { showLogoutDialog = true },
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text(text = stringResource(id = R.string.logout))
+        }
+    } else {
+        // Muestra el botón de "Iniciar Sesión"
+        Button(
+            onClick = onNavigateToLogin, // ¡Ahora esto funciona!
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Text(text = stringResource(id = R.string.login_button))
+        }
+    }*/
 
     //Estados
     val snackbarHostState = remember { SnackbarHostState() }
@@ -182,7 +201,7 @@ fun ProfileScreen(
                     )
                 } else {
                     Text(
-                        text = currentUser?.displayName?.take(1)?.uppercase() ?: "U",
+                        text = currentUser?.name?.take(1)?.uppercase() ?: "U",
                         style = MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontSize = 48.sp
@@ -211,7 +230,7 @@ fun ProfileScreen(
 
             //Información del usuario
             Text(
-                text = currentUser?.displayName ?: "Usuario",
+                text = currentUser?.name ?: "Usuario",
                 style = MaterialTheme.typography.headlineSmall
             )
             Text(
@@ -412,33 +431,21 @@ fun ProfileScreen(
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
-                title = {
-                    Text(
-                        text = if (LocaleManager.getCurrentLanguage(context) == "es") "Cerrar sesión" else "Logout"
-                    )
-                },
-                text = {
-                    Text(
-                        text = if (LocaleManager.getCurrentLanguage(context) == "es")
-                            "¿Estás seguro de que quieres cerrar sesión?"
-                        else
-                            "Are you sure you want to logout?"
-                    )
-                },
+                title = { Text("Cerrar sesión") },
+                text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             showLogoutDialog = false
-                            auth?.signOut()
-                            onNavigateToLogin()
+                            authViewModel.signOut()
                         }
                     ) {
-                        Text(if (LocaleManager.getCurrentLanguage(context) == "es") "Sí, cerrar sesión" else "Yes, logout")
+                        Text("Sí, cerrar sesión")
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
-                        Text(if (LocaleManager.getCurrentLanguage(context) == "es") "Cancelar" else "Cancel")
+                        Text("Cancelar")
                     }
                 }
             )
@@ -461,7 +468,7 @@ fun SimpleGoalsDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Personalizar Metas Diarias", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(id = R.string.personalize_goals_title), style = MaterialTheme.typography.headlineSmall)
         },
         text = {
             Column {
