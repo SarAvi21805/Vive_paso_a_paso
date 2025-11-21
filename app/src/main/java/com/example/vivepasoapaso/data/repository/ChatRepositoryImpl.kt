@@ -6,8 +6,9 @@ import com.example.vivepasoapaso.data.remote.ChatRequest
 import com.example.vivepasoapaso.data.remote.MessageDto
 import com.example.vivepasoapaso.data.remote.RetrofitClient
 import com.example.vivepasoapaso.domain.model.Message
+import javax.inject.Inject
 
-class ChatRepositoryImpl : ChatRepository {
+class ChatRepositoryImpl @Inject constructor() : ChatRepository {
     private val apiService = RetrofitClient.instance
 
     override suspend fun getAIResponse(userMessage: String): Message {

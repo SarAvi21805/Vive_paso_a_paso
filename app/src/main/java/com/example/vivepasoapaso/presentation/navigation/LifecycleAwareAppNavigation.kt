@@ -2,8 +2,8 @@ package com.example.vivepasoapaso.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,35 +13,23 @@ import com.example.vivepasoapaso.ui.screens.login.LoginScreen
 import com.example.vivepasoapaso.ui.screens.profile.ProfileScreen
 import com.example.vivepasoapaso.ui.screens.progress.ProgressScreen
 import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
-import com.example.vivepasoapaso.ui.screens.signup.SignUpScreen
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun AppNavigation() {
+fun LifecycleAwareAppNavigation() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
 
     val currentUser by authViewModel.currentUser.collectAsStateWithLifecycle()
-    val navigateToDashboard by authViewModel.navigateToDashboard.collectAsStateWithLifecycle()
-    val navigateToLogin by authViewModel.navigateToLogin.collectAsStateWithLifecycle()
 
-    // Navegación automática después del registro
-    LaunchedEffect(navigateToLogin) {
-        if (navigateToLogin) {
-            authViewModel.resetNavigation()
-            navController.navigate(Screen.Login.route) {
-                popUpTo(Screen.SignUp.route) { inclusive = true }
-            }
-        }
-    }
-
-    // Navegación automática después del login
-    LaunchedEffect(navigateToDashboard) {
-        if (navigateToDashboard) {
-            authViewModel.resetNavigation()
+    LaunchedEffect(currentUser) {
+        if (currentUser != null && navController.currentDestination?.route != Screen.Dashboard.route) {
             navController.navigate(Screen.Dashboard.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        } else if (currentUser == null && navController.currentDestination?.route != Screen.Login.route) {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
             }
         }
     }
@@ -56,9 +44,6 @@ fun AppNavigation() {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
-                },
-                onNavigateToSignUp = {
-                    navController.navigate(Screen.SignUp.route)
                 }
             )
         }
@@ -96,24 +81,6 @@ fun AppNavigation() {
         composable(Screen.RegisterHabit.route) {
             RegisterHabitScreen(
                 onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.SignUp.route) {
-            SignUpScreen(
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.SignUp.route) { inclusive = true }
-                    }
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToDashboard = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.SignUp.route) { inclusive = true }
-                    }
-                }
             )
         }
     }

@@ -72,5 +72,16 @@
     <string name="daily_reminder_content">Registra tus recordatorios diarios para mantener registro de tus hábitos.</string>
     <string name="privacy_policy_content">En Vive Paso a Paso, valoramos y protegemos tu privacidad. Esta aplicación recopila únicamente la información necesaria para proporcionarte el servicio de seguimiento de hábitos saludables. Tus datos personales y registros de hábitos se almacenan de forma segura en Firebase y solo se utilizan para mostrarte tus estadísticas y progreso. No compartimos tu información con terceros sin tu consentimiento explícito. Puedes eliminar tu cuenta y todos tus datos en cualquier momento desde la configuración de la aplicación.</string>
     <string name="notification_channel_name">Recordatorios de hábitos</string>
+    <string name="goal">Objetivo</string>
+    <string name="current_progress">Progreso actual</string>
+    <string name="register_habits_now">Registrar hábitos ahora</string>
+    <string name="loading_your_habits">Cargando tus hábitos…</string>
+    <string name="error_loading_habits">Error al cargar hábitos: %s</string>
+    <string name="keep_your_streak">¡Mantén tu racha!</string>
+    <string name="register_today_habits">Registra tus hábitos de hoy para continuar con tu progreso.</string>
+    <string name="facebook_app_id">TU_FACEBOOK_APP_ID_AQUI</string>
+    <string name="facebook_client_token">TU_FACEBOOK_CLIENT_TOKEN_AQUI</string>
+    <string name="fb_login_protocol_scheme">fbTU_FACEBOOK_APP_ID_AQUI</string>
+    <string name="default_web_client_id" translatable="false">TU_WEB_CLIENT_ID_GOOGLE_AQUI</string>
     <string name="notification_channel_description">Notificaciones para recordarte registrar tus hábitos</string>
 </resources>

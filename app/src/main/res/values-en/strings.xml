@@ -72,5 +72,16 @@
     <string name="login_button">Login</string>
     <string name="notification_channel_name">Habits reminder</string>
     <string name="notification_channel_description">Notifications to remember to register your habits</string>
+    <string name="goal">Goal</string>
+    <string name="current_progress">Current progress</string>
+    <string name="register_habits_now">Register habits now</string>
+    <string name="loading_your_habits">Loading your habits…</string>
+    <string name="error_loading_habits">Error loading habits: %s</string>
+    <string name="keep_your_streak">Keep your streak!</string>
+    <string name="register_today_habits">Register your today habits to continue your progress.</string>
+    <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID_HERE</string>
+    <string name="facebook_client_token">YOUR_FACEBOOK_CLIENT_TOKEN_HERE</string>
+    <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID_HERE</string>
+    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID_GOOGLE_HERE</string>
     <string name="privacy_policy_content">At Vive Paso a Paso, we value and protect your privacy. This application collects only the necessary information to provide you with the healthy habits tracking service. Your personal data and habit records are stored securely in Firebase and are only used to show you your statistics and progress. We do not share your information with third parties without your explicit consent. You can delete your account and all your data at any time from the application settings.</string>
 </resources>

@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.example.vivepasoapaso.presentation.navigation.AppNavigation
+import com.example.vivepasoapaso.presentation.navigation.AppNavigation // o SimpleAppNavigation
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import dagger.hilt.android.AndroidEntryPoint
+<<<<<<< Updated upstream
 
 //import com.example.vivepasoapaso.util.LocaleManager
+=======
+>>>>>>> Stashed changes
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -23,7 +26,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+<<<<<<< Updated upstream
                     AppNavigation()
+=======
+                    AppNavigation() // o SimpleAppNavigation()
+>>>>>>> Stashed changes
                 }
             }
         }

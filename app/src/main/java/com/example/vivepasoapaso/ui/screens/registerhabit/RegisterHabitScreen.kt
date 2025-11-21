@@ -30,7 +30,11 @@ import androidx.compose.foundation.lazy.items
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.unit.dp
+<<<<<<< Updated upstream
 import androidx.lifecycle.viewmodel.compose.viewModel
+=======
+import androidx.hilt.navigation.compose.hiltViewModel
+>>>>>>> Stashed changes
 
 // Definición de los tipos de hábito como enum
 enum class HabitOption(val displayName: String) {
@@ -82,7 +86,8 @@ fun RegisterHabitScreen(
             BottomNavBar(
                 onNavigateToDashboard = onBackClick,
                 onNavigateToProgress = { /* No needed here */ },
-                onNavigateToProfile = { /* No needed here */ }
+                onNavigateToProfile = { /* No needed here */ },
+                onNavigateToLogin = { /* No needed here */ }
             )
         }
     ) { paddingValues ->

@@ -1,27 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
-    <!--Reglas para backup en la nube-->
     <cloud-backup>
         <include domain="sharedpref" path="."/>
         <exclude domain="sharedpref" path="sensitive_data.xml"/>
-
+        <include domain="file" path="."/>
         <include domain="database" path="."/>
-
+        <include domain="external" path="."/>
         <include domain="file" path="user_data/"/>
         <exclude domain="file" path="cache/"/>
         <exclude domain="file" path="temp/"/>
 
-        <!--Preferencias de la app-->
         <include domain="sharedpref" path="AppPreferences.xml"/>
     </cloud-backup>
 
-    <!--Reglas para transferencia entre dispositivos-->
     <device-transfer>
         <include domain="sharedpref" path="."/>
         <exclude domain="sharedpref" path="sensitive_data.xml"/>
-
+        <include domain="file" path="."/>
         <include domain="database" path="."/>
-
+        <include domain="external" path="."/>
         <include domain="file" path="user_data/"/>
         <exclude domain="file" path="cache/"/>
         <exclude domain="file" path="temp/"/>

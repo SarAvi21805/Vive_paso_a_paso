@@ -451,7 +451,7 @@ class ProgressViewModel @Inject constructor(
         return streak
     }
 
-    private fun getAIRecommendation() {
+    fun getAIRecommendation() {
         viewModelScope.launch {
             try {
                 _state.value = _state.value.copy(isLoading = true)

@@ -1,5 +1,3 @@
-// Dependency Injection
-
 package com.example.vivepasoapaso.di
 
 import com.example.vivepasoapaso.data.remote.EdamamApiService
@@ -21,7 +19,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // Proveedor para Moshi (convertidor JSON)
     @Provides
     @Singleton
     fun provideMoshi(): Moshi {
@@ -30,7 +27,6 @@ object NetworkModule {
             .build()
     }
 
-    // Proveedor para el Cliente HTTP (con logging para depurar)
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
@@ -39,13 +35,12 @@ object NetworkModule {
             .build()
     }
 
-    // Proveedor para cada API
     @Provides
     @Singleton
     @Named("Edamam")
     fun provideEdamamRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.edamam.com")
+            .baseUrl("https://api.edamam.com/")
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -56,13 +51,12 @@ object NetworkModule {
     @Named("OpenWeather")
     fun provideOpenWeatherRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org")
+            .baseUrl("https://api.openweathermap.org/")
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
 
-    // Provedores de cada APIService
     @Provides
     @Singleton
     fun provideEdamamApiService(@Named("Edamam") retrofit: Retrofit): EdamamApiService {

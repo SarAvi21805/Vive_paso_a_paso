@@ -277,7 +277,7 @@ fun ProfileScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = dimensionResource(id = R.dimen.padding_medium)))
 
-            //Cuenta y Seguridad - Solo mostrar si el usuario está logueado
+            // Cuenta y Seguridad - Solo mostrar si el usuario está logueado
             if (currentUser != null) {
                 SectionTitle(title = stringResource(id = R.string.account_and_security))
                 ProfileOption(
@@ -294,10 +294,11 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
 
-            //Botón de cerrar sesión o iniciar sesión
+            // Botón de cerrar sesión o iniciar sesión
             if (currentUser != null) {
                 Button(
                     onClick = { showLogoutDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text(text = stringResource(id = R.string.logout))
@@ -305,9 +306,22 @@ fun ProfileScreen(
             } else {
                 Button(
                     onClick = { onNavigateToLogin() },
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(text = stringResource(id = R.string.login_button))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        // Navegar a SignUp desde aquí también
+                        onNavigateToLogin()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Crear cuenta")
                 }
             }
         }

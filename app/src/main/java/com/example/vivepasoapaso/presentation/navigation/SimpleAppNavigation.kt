@@ -15,16 +15,15 @@ import com.example.vivepasoapaso.ui.screens.progress.ProgressScreen
 import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
 import com.example.vivepasoapaso.ui.screens.signup.SignUpScreen
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun AppNavigation() {
+fun SimpleAppNavigation() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
 
-    val currentUser by authViewModel.currentUser.collectAsStateWithLifecycle()
-    val navigateToDashboard by authViewModel.navigateToDashboard.collectAsStateWithLifecycle()
-    val navigateToLogin by authViewModel.navigateToLogin.collectAsStateWithLifecycle()
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val navigateToDashboard by authViewModel.navigateToDashboard.collectAsState()
+    val navigateToLogin by authViewModel.navigateToLogin.collectAsState()
 
     // Navegación automática después del registro
     LaunchedEffect(navigateToLogin) {
@@ -48,8 +47,17 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = if (currentUser != null) Screen.Dashboard.route else Screen.Login.route
+        startDestination = Screen.Dashboard.route
     ) {
+        composable(Screen.Dashboard.route) {
+            DashboardScreen(
+                onNavigateToProgress = { navController.navigate(Screen.Progress.route) },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToRegisterHabit = { navController.navigate(Screen.RegisterHabit.route) },
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) }
+            )
+        }
+
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateToDashboard = {
@@ -60,42 +68,6 @@ fun AppNavigation() {
                 onNavigateToSignUp = {
                     navController.navigate(Screen.SignUp.route)
                 }
-            )
-        }
-
-        composable(Screen.Dashboard.route) {
-            DashboardScreen(
-                onNavigateToProgress = { navController.navigate(Screen.Progress.route) },
-                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                onNavigateToRegisterHabit = { navController.navigate(Screen.RegisterHabit.route) },
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.Progress.route) {
-            ProgressScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.Profile.route) {
-            ProfileScreen(
-                onBackClick = { navController.popBackStack() },
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.RegisterHabit.route) {
-            RegisterHabitScreen(
-                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -114,6 +86,27 @@ fun AppNavigation() {
                         popUpTo(Screen.SignUp.route) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Screen.Progress.route) {
+            ProgressScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route)
+                }
+            )
+        }
+
+        composable(Screen.RegisterHabit.route) {
+            RegisterHabitScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

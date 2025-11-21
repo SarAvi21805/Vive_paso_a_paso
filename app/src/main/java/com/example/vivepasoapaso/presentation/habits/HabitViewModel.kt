@@ -1,14 +1,12 @@
 package com.example.vivepasoapaso.presentation.habits
 
-import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.model.HabitRecord
 import com.example.vivepasoapaso.data.model.HabitType
 import com.example.vivepasoapaso.data.model.MoodOption
 import com.example.vivepasoapaso.data.repository.HabitRepository
-import com.example.vivepasoapaso.util.LocaleManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,97 +15,46 @@ import java.util.*
 import javax.inject.Inject
 import com.google.firebase.Timestamp
 
+<<<<<<< Updated upstream
 class HabitViewModel @Inject constructor(private val habitRepository: HabitRepository) : ViewModel() {
+=======
+@HiltViewModel
+class HabitViewModel @Inject constructor(
+    private val habitRepository: HabitRepository
+) : ViewModel() {
+>>>>>>> Stashed changes
 
-    private val _habitState = MutableStateFlow<HabitState>(HabitState.Idle)
-    val habitState: StateFlow<HabitState> = _habitState.asStateFlow()
+    private val _state = MutableStateFlow(HabitState())
+    val state: StateFlow<HabitState> = _state.asStateFlow()
 
-    private val _todayRecords = MutableStateFlow<List<HabitRecord>>(emptyList())
-    val todayRecords: StateFlow<List<HabitRecord>> = _todayRecords.asStateFlow()
-
-    private val _weeklyStats = MutableStateFlow<Map<HabitType, Double>>(emptyMap())
-    val weeklyStats: StateFlow<Map<HabitType, Double>> = _weeklyStats.asStateFlow()
-
+    // Hacer estos métodos públicos
     fun saveHabitRecord(record: HabitRecord) {
-        _habitState.value = HabitState.Loading
+        _state.value = _state.value.copy(isLoading = true, error = null)
+
         viewModelScope.launch {
             val result = habitRepository.saveHabitRecord(record)
-            _habitState.value = when {
-                result.isSuccess -> HabitState.Success
-                else -> HabitState.Error(result.exceptionOrNull()?.message ?: "Error al guardar")
-            }
-
-            //Actualizar registros del día
-            record.userId?.let { loadTodayRecords(it) }
-        }
-    }
-
-    fun loadTodayRecords(userId: String) {
-        viewModelScope.launch {
-            _todayRecords.value = habitRepository.getTodayHabitRecords(userId)
-        }
-    }
-
-    fun loadWeeklyStats(userId: String) {
-        viewModelScope.launch {
-            _weeklyStats.value = habitRepository.getWeeklyStats(userId)
-        }
-    }
-
-    fun getHabitRecordsByType(userId: String, type: HabitType, limit: Int = 30) {
-        viewModelScope.launch {
-            val records = habitRepository.getHabitRecordsByType(userId, type, limit)
-            _habitState.value = HabitState.RecordsLoaded(records)
-        }
-    }
-
-    fun clearHabitState() {
-        _habitState.value = HabitState.Idle
-    }
-
-    fun testApi(food: String) {
-        viewModelScope.launch {
-            val calories = habitRepository.getCaloriesForFood(food)
-            if (calories != null) {
-                Log.d("HabitViewModel", "Las calorías de '$food' son: $calories")
-            } else {
-                Log.e("HabitViewModel", "Falló la llamada a la API para '$food'")
-            }
-        }
-    }
-
-    fun calculateAndSaveFoodHabit(foodDescription: String, userId: String) {
-        _habitState.value = HabitState.Loading
-        viewModelScope.launch {
-            // Llamada al repositorio para obtener las calorías desde la API
-            val calories = habitRepository.getCaloriesForFood(foodDescription)
-
-            if (calories != null && calories > 0) {
-                // Creación del objeto HabitRecord
-                val record = HabitRecord(
-                    userId = userId,
-                    type = HabitType.NUTRITION,
-                    value = calories,
-                    recordDate = Timestamp.now() // fecha actual
-                )
-
-                // Llamada a la función para guardar
-                val result = habitRepository.saveHabitRecord(record)
-                _habitState.value = when {
-                    result.isSuccess -> HabitState.Success
-                    else -> HabitState.Error(result.exceptionOrNull()?.message ?: "Error al guardar")
+            _state.value = when {
+                result.isSuccess -> {
+                    // Disparar actualización
+                    HabitState(
+                        isLoading = false,
+                        isSuccess = true,
+                        refreshTrigger = _state.value.refreshTrigger + 1
+                    )
                 }
-            } else {
-                // API falla o no encontró calorías
-                _habitState.value = HabitState.Error("No se pudieron calcular las calorías para '$foodDescription'")
+                else -> {
+                    HabitState(
+                        isLoading = false,
+                        error = result.exceptionOrNull()?.message ?: "Error al guardar el hábito"
+                    )
+                }
             }
 
             // Actualizar registros del día
-            loadTodayRecords(userId)
+            record.userId?.let { loadTodayHabits(it) }
         }
     }
 
-    // Nueva función para guardar con estado de ánimo y fecha personalizada
     fun calculateAndSaveFoodHabit(
         foodDescription: String,
         userId: String,
@@ -115,7 +62,8 @@ class HabitViewModel @Inject constructor(private val habitRepository: HabitRepos
         mood: MoodOption,
         date: Date
     ) {
-        _habitState.value = HabitState.Loading
+        _state.value = _state.value.copy(isLoading = true, error = null)
+
         viewModelScope.launch {
             val calories = habitRepository.getCaloriesForFood(foodDescription)
 
@@ -128,48 +76,56 @@ class HabitViewModel @Inject constructor(private val habitRepository: HabitRepos
                     mood = mood.name,
                     recordDate = Timestamp(date)
                 )
-                val result = habitRepository.saveHabitRecord(record)
-                _habitState.value = when {
-                    result.isSuccess -> HabitState.Success
-                    else -> HabitState.Error(result.exceptionOrNull()?.message ?: "Error al guardar")
-                }
+                saveHabitRecord(record)
             } else {
-                _habitState.value = HabitState.Error("No se pudieron calcular las calorías para '$foodDescription'")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = "No se pudieron calcular las calorías para '$foodDescription'"
+                )
             }
-            loadTodayRecords(userId)
         }
     }
 
-    // Función para cargar consejo del clima
-    suspend fun loadWeatherTip(context: Context): String {
-        return try {
-            val currentLanguage = LocaleManager.getCurrentLanguage(context)
-            // Usar ubicación por defecto (podría mejorarse con GPS)
-            val weather = habitRepository.getCurrentWeather(40.7128, -74.0060) // NYC por defecto
-
-            val weatherMain = weather?.weather?.firstOrNull()?.main ?: "Clear"
-            val tip = when (weatherMain) {
-                "Rain" -> if (currentLanguage == "es") "Llueve hoy - perfecto para actividades indoor" else "Raining today - perfect for indoor activities"
-                "Clear" -> if (currentLanguage == "es") "¡Día soleado! Ideal para caminar al aire libre" else "Sunny day! Ideal for outdoor walking"
-                "Clouds" -> if (currentLanguage == "es") "Día nublado - buen momento para ejercicio moderado" else "Cloudy day - good time for moderate exercise"
-                "Snow" -> if (currentLanguage == "es") "¡Nieva! Cuida tu hidratación en interiores" else "Snowing! Stay hydrated indoors"
-                else -> if (currentLanguage == "es") "Mantente activo y hidratado hoy" else "Stay active and hydrated today"
-            }
-            tip
-        } catch (e: Exception) {
-            if (LocaleManager.getCurrentLanguage(context) == "es") {
-                "Mantén una rutina constante para mejores resultados"
-            } else {
-                "Keep a consistent routine for better results"
+    fun loadTodayHabits(userId: String) {
+        viewModelScope.launch {
+            try {
+                val todayHabits = habitRepository.getTodayHabitRecords(userId)
+                _state.value = _state.value.copy(todayHabits = todayHabits)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    error = "Error al cargar hábitos del día: ${e.message}"
+                )
             }
         }
     }
+
+    fun loadWeeklyStats(userId: String) {
+        viewModelScope.launch {
+            try {
+                val weeklyStats = habitRepository.getWeeklyStats(userId)
+                _state.value = _state.value.copy(weeklyStats = weeklyStats)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    error = "Error al cargar estadísticas semanales: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun clearError() {
+        _state.value = _state.value.copy(error = null)
+    }
+
+    fun resetState() {
+        _state.value = HabitState()
+    }
 }
 
-sealed class HabitState {
-    object Idle : HabitState()
-    object Loading : HabitState()
-    object Success : HabitState()
-    data class Error(val message: String) : HabitState()
-    data class RecordsLoaded(val records: List<HabitRecord>) : HabitState()
-}
+data class HabitState(
+    val todayHabits: List<HabitRecord> = emptyList(),
+    val weeklyStats: Map<HabitType, Double> = emptyMap(),
+    val isLoading: Boolean = false,
+    val isSuccess: Boolean = false,
+    val error: String? = null,
+    val refreshTrigger: Int = 0
+)

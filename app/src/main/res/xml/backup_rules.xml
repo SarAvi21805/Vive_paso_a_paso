@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <include domain="sharedpref" path="."/>
+    <include domain="external" path="."/>
     <exclude domain="sharedpref" path="sensitive_data.xml"/>
-
-    <!--Base de datos de Room-->
     <include domain="database" path="."/>
-
-    <!--Archivos en el directorio files-->
     <include domain="file" path="."/>
-
-    <!--Excluir archivos temporales o cache-->
     <exclude domain="file" path="cache/"/>
     <exclude domain="file" path="temp/"/>
-
-    <!--Configuraciones específicas de la app-->
     <include domain="sharedpref" path="AppPreferences.xml"/>
 </full-backup-content>
