@@ -5,7 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.Notes
@@ -17,6 +17,8 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.vivepasoapaso.R
 import com.example.vivepasoapaso.data.model.HabitRecord
 import com.example.vivepasoapaso.data.model.HabitType
@@ -29,34 +31,43 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.ui.unit.dp
-<<<<<<< Updated upstream
-import androidx.lifecycle.viewmodel.compose.viewModel
-=======
-import androidx.hilt.navigation.compose.hiltViewModel
->>>>>>> Stashed changes
 
 // Definición de los tipos de hábito como enum
 enum class HabitOption(val displayName: String) {
     WATER("Agua"),
     SLEEP("Sueño"),
     EXERCISE("Ejercicio"),
-    FOOD("Alimentación")
+    NUTRITION("Alimentación")
 }
 
-// Definición de los tipos de hábito como enum
-enum class HabitOption(val displayName: String) {
-    WATER("Agua"),
-    SLEEP("Sueño"),
-    EXERCISE("Ejercicio"),
-    FOOD("Alimentación")
+// Función auxiliar para obtener unidades según el tipo de hábito
+private fun getUnitForHabitType(habitType: HabitType): String {
+    return when (habitType) {
+        HabitType.WATER -> "L"
+        HabitType.SLEEP -> "hrs"
+        HabitType.EXERCISE -> "min"
+        HabitType.STEPS -> "steps"
+        HabitType.NUTRITION -> "cal"
+        HabitType.MEDITATION -> "min"
+        HabitType.READING -> "min"
+    }
+}
+
+// Función auxiliar para mapear HabitOption a HabitType
+private fun mapHabitOptionToType(habitOption: HabitOption): HabitType {
+    return when (habitOption) {
+        HabitOption.WATER -> HabitType.WATER
+        HabitOption.SLEEP -> HabitType.SLEEP
+        HabitOption.EXERCISE -> HabitType.EXERCISE
+        HabitOption.NUTRITION -> HabitType.NUTRITION
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterHabitScreen(
     onBackClick: () -> Unit = {},
-    viewModel: HabitViewModel = viewModel()
+    viewModel: HabitViewModel = hiltViewModel()
 ) {
     // Estados para manejar el formulario dinámico
     var selectedHabit by remember { mutableStateOf(HabitOption.EXERCISE) }
@@ -77,7 +88,7 @@ fun RegisterHabitScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             )
@@ -168,7 +179,7 @@ fun RegisterHabitScreen(
                     onClick = {
                         val userId = "current_user_id" // Reemplazar con ID real del usuario
 
-                        if (selectedHabit == HabitOption.FOOD) {
+                        if (selectedHabit == HabitOption.NUTRITION) {
                             viewModel.calculateAndSaveFoodHabit(
                                 foodDescription = primaryInputValue,
                                 userId = userId,
@@ -177,10 +188,12 @@ fun RegisterHabitScreen(
                                 date = selectedDate
                             )
                         } else {
+                            val habitType = mapHabitOptionToType(selectedHabit)
                             val record = HabitRecord(
                                 userId = userId,
-                                type = HabitType.valueOf(selectedHabit.name),
+                                type = habitType,
                                 value = primaryInputValue.toDoubleOrNull() ?: 0.0,
+                                unit = getUnitForHabitType(habitType),
                                 notes = notesValue,
                                 mood = selectedMood.name,
                                 recordDate = Timestamp(selectedDate)
@@ -200,8 +213,9 @@ fun RegisterHabitScreen(
             }
         }
     }
-}*/
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoodSelector(
     selectedMood: MoodOption,
@@ -262,7 +276,7 @@ fun HabitScrollableSelector(
             }
         }
     }
-}*/
+}
 
 @Composable
 fun DynamicHabitInput(
@@ -304,7 +318,7 @@ fun DynamicHabitInput(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            HabitOption.FOOD -> {
+            HabitOption.NUTRITION -> {
                 OutlinedTextField(
                     value = primaryValue,
                     onValueChange = onPrimaryValueChange,

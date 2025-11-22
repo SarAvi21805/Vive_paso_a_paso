@@ -84,4 +84,14 @@
     <string name="fb_login_protocol_scheme">fbYOUR_FACEBOOK_APP_ID_HERE</string>
     <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID_GOOGLE_HERE</string>
     <string name="privacy_policy_content">At Vive Paso a Paso, we value and protect your privacy. This application collects only the necessary information to provide you with the healthy habits tracking service. Your personal data and habit records are stored securely in Firebase and are only used to show you your statistics and progress. We do not share your information with third parties without your explicit consent. You can delete your account and all your data at any time from the application settings.</string>
+
+    <!-- New authentication strings -->
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_in_with_facebook">Sign in with Facebook</string>
+    <string name="sign_in_with_apple">Sign in with Apple</string>
+    <string name="or">or</string>
+    <string name="welcome_back">Welcome back!</string>
+    <string name="get_started">Start your healthy journey</string>
+    <string name="reset_password_success">Reset email sent</string>
+    <string name="reset_password_error">Error sending reset email</string>
 </resources>

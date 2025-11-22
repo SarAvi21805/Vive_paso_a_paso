@@ -1,16 +1,9 @@
 package com.example.vivepasoapaso.presentation.auth
 
-import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.model.User
 import com.example.vivepasoapaso.data.repository.AuthRepository
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,186 +16,170 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
-
-    private val _navigateToDashboard = MutableStateFlow(false)
-    val navigateToDashboard: StateFlow<Boolean> = _navigateToDashboard.asStateFlow()
-
-    private val _navigateToLogin = MutableStateFlow(false)
-    val navigateToLogin: StateFlow<Boolean> = _navigateToLogin.asStateFlow()
-
-    private val _snackbarMessage = MutableStateFlow<String?>(null)
-    val snackbarMessage: StateFlow<String?> = _snackbarMessage.asStateFlow()
-
-    private val _isUpdatingGoals = MutableStateFlow(false)
-    val isUpdatingGoals: StateFlow<Boolean> = _isUpdatingGoals.asStateFlow()
+    val currentUser = _currentUser.asStateFlow()
 
     init {
         checkCurrentUser()
     }
 
-    fun signUp(email: String, password: String, name: String) {
-        _authState.value = AuthState.Loading
+    private fun checkCurrentUser() {
         viewModelScope.launch {
-            val result = authRepository.signUp(email, password, name)
-            _authState.value = when {
-                result.isSuccess -> {
-                    _currentUser.value = result.getOrNull()
-                    _navigateToLogin.value = true // Navegar a login después del registro
-                    AuthState.Success
+            _authState.value = AuthState.Loading
+            try {
+                val user = authRepository.getCurrentUser()
+                if (user != null) {
+                    _currentUser.value = user
+                    _authState.value = AuthState.Authenticated(user)
+                } else {
+                    _authState.value = AuthState.Unauthenticated
                 }
-                else -> AuthState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            } catch (e: Exception) {
+                _authState.value = AuthState.Unauthenticated
+                _errorMessage.value = "Error verificando usuario: ${e.message}"
             }
         }
     }
 
-    fun signIn(email: String, password: String) {
-        _authState.value = AuthState.Loading
+    fun signInWithEmail(email: String, password: String) {
         viewModelScope.launch {
-            val result = authRepository.signIn(email, password)
-            _authState.value = when {
-                result.isSuccess -> {
-                    _currentUser.value = result.getOrNull()
-                    _navigateToDashboard.value = true
-                    AuthState.Success
+            _authState.value = AuthState.Loading
+            try {
+                val result = authRepository.signIn(email, password)
+                if (result.isSuccess) {
+                    val user = result.getOrThrow()
+                    _currentUser.value = user
+                    _authState.value = AuthState.Authenticated(user)
+                } else {
+                    _authState.value = AuthState.Unauthenticated
+                    _errorMessage.value = "Error al iniciar sesión"
                 }
-                else -> AuthState.Error(result.exceptionOrNull()?.message ?: "Error desconocido")
+            } catch (e: Exception) {
+                _authState.value = AuthState.Unauthenticated
+                _errorMessage.value = "Error al iniciar sesión: ${e.message}"
             }
         }
     }
 
-    fun signInWithGoogle(account: GoogleSignInAccount) {
-        _authState.value = AuthState.Loading
+    fun signUpWithEmail(email: String, password: String, name: String) {
         viewModelScope.launch {
-            val result = authRepository.signInWithGoogle(account)
-            _authState.value = when {
-                result.isSuccess -> {
-                    _currentUser.value = result.getOrNull()
-                    _navigateToDashboard.value = true
-                    AuthState.Success
+            _authState.value = AuthState.Loading
+            try {
+                val result = authRepository.signUp(email, password, name)
+                if (result.isSuccess) {
+                    val user = result.getOrThrow()
+                    _currentUser.value = user
+                    _authState.value = AuthState.Authenticated(user)
+                } else {
+                    _authState.value = AuthState.Unauthenticated
+                    _errorMessage.value = "Error al crear cuenta"
                 }
-                else -> AuthState.Error(result.exceptionOrNull()?.message ?: "Error con Google Sign In")
+            } catch (e: Exception) {
+                _authState.value = AuthState.Unauthenticated
+                _errorMessage.value = "Error al crear cuenta: ${e.message}"
+            }
+        }
+    }
+
+    fun signInWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                // Para Google, necesitamos crear un GoogleSignInAccount temporal
+                // o modificar AuthRepository para aceptar idToken directamente
+                _errorMessage.value = "Google Sign-In necesita configuración adicional en AuthRepository"
+                _authState.value = AuthState.Unauthenticated
+            } catch (e: Exception) {
+                _authState.value = AuthState.Unauthenticated
+                _errorMessage.value = "Error con Google Sign-In: ${e.message}"
             }
         }
     }
 
     fun signInWithFacebook(token: String) {
-        _authState.value = AuthState.Loading
         viewModelScope.launch {
-            val result = authRepository.signInWithFacebook(token)
-            _authState.value = when {
-                result.isSuccess -> {
-                    _currentUser.value = result.getOrNull()
-                    _navigateToDashboard.value = true
-                    AuthState.Success
+            _authState.value = AuthState.Loading
+            try {
+                val result = authRepository.signInWithFacebook(token)
+                if (result.isSuccess) {
+                    val user = result.getOrThrow()
+                    _currentUser.value = user
+                    _authState.value = AuthState.Authenticated(user)
+                } else {
+                    _authState.value = AuthState.Unauthenticated
+                    _errorMessage.value = "Error con Facebook Sign-In"
                 }
-                else -> AuthState.Error(result.exceptionOrNull()?.message ?: "Error con Facebook Sign In")
+            } catch (e: Exception) {
+                _authState.value = AuthState.Unauthenticated
+                _errorMessage.value = "Error con Facebook Sign-In: ${e.message}"
             }
         }
     }
 
     fun signInWithApple(idToken: String, nonce: String) {
-        _authState.value = AuthState.Loading
         viewModelScope.launch {
-            val result = authRepository.signInWithApple(idToken, nonce)
-            _authState.value = when {
-                result.isSuccess -> {
-                    _currentUser.value = result.getOrNull()
-                    _navigateToDashboard.value = true
-                    AuthState.Success
+            _authState.value = AuthState.Loading
+            try {
+                val result = authRepository.signInWithApple(idToken, nonce)
+                if (result.isSuccess) {
+                    val user = result.getOrThrow()
+                    _currentUser.value = user
+                    _authState.value = AuthState.Authenticated(user)
+                } else {
+                    _authState.value = AuthState.Unauthenticated
+                    _errorMessage.value = "Error con Apple Sign-In"
                 }
-                else -> AuthState.Error(result.exceptionOrNull()?.message ?: "Error con Apple Sign In")
-            }
-        }
-    }
-
-    fun resetPassword(email: String) {
-        _authState.value = AuthState.Loading
-        viewModelScope.launch {
-            val result = authRepository.resetPassword(email)
-            _authState.value = when {
-                result.isSuccess -> {
-                    _snackbarMessage.value = "Se ha enviado un enlace de recuperación a tu email"
-                    AuthState.Success
-                }
-                else -> AuthState.Error(result.exceptionOrNull()?.message ?: "Error al enviar email de recuperación")
+            } catch (e: Exception) {
+                _authState.value = AuthState.Unauthenticated
+                _errorMessage.value = "Error con Apple Sign-In: ${e.message}"
             }
         }
     }
 
     fun signOut() {
         viewModelScope.launch {
-            authRepository.signOut()
-            _currentUser.value = null
-            _authState.value = AuthState.Idle
-            _navigateToDashboard.value = false
-        }
-    }
-
-    fun updateUserProfile(name: String, language: String) {
-        viewModelScope.launch {
-            val currentUser = _currentUser.value ?: return@launch
-            val result = authRepository.updateUserProfile(currentUser.id, name, language)
-            if (result.isSuccess) {
-                _currentUser.value = result.getOrNull()
-                _snackbarMessage.value = "Perfil actualizado correctamente"
-            } else {
-                _snackbarMessage.value = "Error al actualizar perfil: ${result.exceptionOrNull()?.message}"
+            try {
+                authRepository.signOut()
+                _currentUser.value = null
+                _authState.value = AuthState.Unauthenticated
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cerrar sesión: ${e.message}"
             }
         }
     }
 
-    fun updateDailyGoals(dailyGoals: com.example.vivepasoapaso.data.model.DailyGoals) {
-        _isUpdatingGoals.value = true
-        viewModelScope.launch {
-            val currentUser = _currentUser.value ?: run {
-                _snackbarMessage.value = "Error: Usuario no autenticado"
-                _isUpdatingGoals.value = false
-                return@launch
-            }
-
-            val result = authRepository.updateDailyGoals(currentUser.id, dailyGoals)
-            if (result.isSuccess) {
-                _currentUser.value = result.getOrNull()
-                _snackbarMessage.value = "¡Metas actualizadas correctamente!"
-            } else {
-                _snackbarMessage.value = "Error al actualizar metas: ${result.exceptionOrNull()?.message}"
-            }
-            _isUpdatingGoals.value = false
-        }
-    }
-
-    fun clearSnackbarMessage() {
-        _snackbarMessage.value = null
-    }
-
-    fun resetNavigation() {
-        _navigateToDashboard.value = false
-        _navigateToLogin.value = false
-    }
-
-    private fun checkCurrentUser() {
+    fun resetPassword(email: String) {
         viewModelScope.launch {
             try {
-                _currentUser.value = authRepository.getCurrentUser()
+                val result = authRepository.resetPassword(email)
+                if (result.isSuccess) {
+                    _errorMessage.value = "Correo de restablecimiento enviado"
+                } else {
+                    _errorMessage.value = "Error al enviar correo de restablecimiento"
+                }
             } catch (e: Exception) {
-                // Ignorar errores al obtener usuario actual
+                _errorMessage.value = "Error al restablecer contraseña: ${e.message}"
             }
         }
     }
 
-    fun clearAuthState() {
-        _authState.value = AuthState.Idle
+    fun setError(message: String) {
+        _errorMessage.value = message
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
     }
 }
 
 sealed class AuthState {
-    object Idle : AuthState()
     object Loading : AuthState()
-    object Success : AuthState()
-    data class Error(val message: String) : AuthState()
+    object Unauthenticated : AuthState()
+    data class Authenticated(val user: User) : AuthState()
 }

@@ -13,32 +13,22 @@ import com.example.vivepasoapaso.ui.screens.login.LoginScreen
 import com.example.vivepasoapaso.ui.screens.profile.ProfileScreen
 import com.example.vivepasoapaso.ui.screens.progress.ProgressScreen
 import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
-import com.example.vivepasoapaso.ui.screens.signup.SignUpScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun SimpleAppNavigation() {
+fun SimpleAppNavigation(
+    onGoogleSignIn: () -> Unit,
+    onFacebookSignIn: () -> Unit,
+    onAppleSignIn: () -> Unit
+) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
 
     val currentUser by authViewModel.currentUser.collectAsState()
-    val navigateToDashboard by authViewModel.navigateToDashboard.collectAsState()
-    val navigateToLogin by authViewModel.navigateToLogin.collectAsState()
-
-    // Navegación automática después del registro
-    LaunchedEffect(navigateToLogin) {
-        if (navigateToLogin) {
-            authViewModel.resetNavigation()
-            navController.navigate(Screen.Login.route) {
-                popUpTo(Screen.SignUp.route) { inclusive = true }
-            }
-        }
-    }
 
     // Navegación automática después del login
-    LaunchedEffect(navigateToDashboard) {
-        if (navigateToDashboard) {
-            authViewModel.resetNavigation()
+    LaunchedEffect(currentUser) {
+        if (currentUser != null && navController.currentDestination?.route != Screen.Dashboard.route) {
             navController.navigate(Screen.Dashboard.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
@@ -47,7 +37,7 @@ fun SimpleAppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Dashboard.route
+        startDestination = if (currentUser != null) Screen.Dashboard.route else Screen.Login.route
     ) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
@@ -65,27 +55,9 @@ fun SimpleAppNavigation() {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                onNavigateToSignUp = {
-                    navController.navigate(Screen.SignUp.route)
-                }
-            )
-        }
-
-        composable(Screen.SignUp.route) {
-            SignUpScreen(
-                onNavigateToLogin = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.SignUp.route) { inclusive = true }
-                    }
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToDashboard = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.SignUp.route) { inclusive = true }
-                    }
-                }
+                onGoogleSignIn = onGoogleSignIn,
+                onFacebookSignIn = onFacebookSignIn,
+                onAppleSignIn = onAppleSignIn
             )
         }
 
@@ -98,6 +70,7 @@ fun SimpleAppNavigation() {
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onBackClick = { navController.popBackStack() },
+                onEditProfile = { /* TODO: Implementar edición de perfil */ },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route)
                 }

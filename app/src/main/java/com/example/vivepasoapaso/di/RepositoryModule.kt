@@ -1,8 +1,6 @@
-/*package com.example.vivepasoapaso.di
+package com.example.vivepasoapaso.di
 
 import com.example.vivepasoapaso.data.repository.AuthRepository
-import com.example.vivepasoapaso.data.repository.ChatRepository
-import com.example.vivepasoapaso.data.repository.ChatRepositoryImpl
 import com.example.vivepasoapaso.data.repository.HabitRepository
 import dagger.Module
 import dagger.Provides
@@ -16,23 +14,13 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideChatRepository(): ChatRepository {
-        return ChatRepositoryImpl()
-    }
-
-    @Provides
-    @Singleton
-    fun provideAuthRepository(
-        authRepository: AuthRepository
-    ): AuthRepository {
+    fun provideAuthRepository(authRepository: AuthRepository): AuthRepository {
         return authRepository
     }
 
     @Provides
     @Singleton
-    fun provideHabitRepository(
-        habitRepository: HabitRepository
-    ): HabitRepository {
+    fun provideHabitRepository(habitRepository: HabitRepository): HabitRepository {
         return habitRepository
     }
-}*/
+}

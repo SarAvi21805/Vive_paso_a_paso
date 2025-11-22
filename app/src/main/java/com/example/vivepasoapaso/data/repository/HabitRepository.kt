@@ -3,8 +3,8 @@ package com.example.vivepasoapaso.data.repository
 import android.util.Log
 import com.example.vivepasoapaso.BuildConfig
 import com.example.vivepasoapaso.data.local.HabitDao
-import com.example.vivepasoapaso.data.local.HabitEntity // BD local
-import com.example.vivepasoapaso.data.model.HabitRecord // Lógica de negocio y Firebase
+import com.example.vivepasoapaso.data.local.HabitEntity
+import com.example.vivepasoapaso.data.model.HabitRecord
 import com.example.vivepasoapaso.data.model.HabitType
 import com.example.vivepasoapaso.data.remote.EdamamApiService
 import com.example.vivepasoapaso.data.remote.OpenWeatherApiService
@@ -57,6 +57,7 @@ class HabitRepository @Inject constructor(
     fun getLocalHabitsForDateRange(startDate: Long, endDate: Long): Flow<List<HabitEntity>> {
         return habitDao.getHabitsForUserOnDate(startDate, endDate)
     }
+
     // Funciones de datos de hábitos
 
     /**Guarda en Firebase y luego en la BD local.*/
@@ -93,9 +94,9 @@ class HabitRepository @Inject constructor(
     ): List<HabitRecord> {
         return try {
             val snapshot = firestore.collection("habits")
-                .whereEqualTo("user_id", userId)
-                .whereGreaterThanOrEqualTo("record_date", Timestamp(startDate))
-                .whereLessThanOrEqualTo("record_date", Timestamp(endDate))
+                .whereEqualTo("userId", userId)
+                .whereGreaterThanOrEqualTo("recordDate", Timestamp(startDate))
+                .whereLessThanOrEqualTo("recordDate", Timestamp(endDate))
                 .get()
                 .await()
             snapshot.documents.mapNotNull { it.toObject(HabitRecord::class.java) }
@@ -112,12 +113,9 @@ class HabitRepository @Inject constructor(
     ): List<HabitRecord> {
         return try {
             val snapshot = firestore.collection("habits")
-                .whereEqualTo("user_id", userId)
+                .whereEqualTo("userId", userId)
                 .whereEqualTo("type", type)
-                .orderBy(
-                    "record_date",
-                    com.google.firebase.firestore.Query.Direction.DESCENDING
-                )
+                .orderBy("recordDate", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .limit(limit.toLong())
                 .get()
                 .await()
@@ -141,10 +139,14 @@ class HabitRepository @Inject constructor(
     suspend fun getTodayHabitRecords(userId: String): List<HabitRecord> {
         val calendar = Calendar.getInstance()
         val startOfDay = calendar.apply {
-            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
         }.time
         val endOfDay = calendar.apply {
-            set(Calendar.HOUR_OF_DAY, 23); set(Calendar.MINUTE, 59); set(Calendar.SECOND, 59)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
         }.time
         return getHabitRecords(userId, startOfDay, endOfDay)
     }
@@ -170,7 +172,7 @@ class HabitRepository @Inject constructor(
 
             val records = getHabitRecords(userId, startDate, endDate)
 
-            //Calcular promedios semanales
+            // Calcular promedios semanales
             val waterRecords = records.filter { it.type == HabitType.WATER }
             val sleepRecords = records.filter { it.type == HabitType.SLEEP }
             val stepsRecords = records.filter { it.type == HabitType.STEPS }
@@ -191,11 +193,11 @@ class HabitRepository @Inject constructor(
     }
 
     private suspend fun calculateStreak(userId: String): Int {
-        //Implementación simple de racha - contar días consecutivos con al menos un hábito
+        // Implementación simple de racha - contar días consecutivos con al menos un hábito
         var streak = 0
         val calendar = Calendar.getInstance()
 
-        for (i in 0 until 30) { //Revisar hasta 30 días
+        for (i in 0 until 30) { // Revisar hasta 30 días
             calendar.time = Date()
             calendar.add(Calendar.DAY_OF_YEAR, -i)
             val dayStart = calendar.apply {

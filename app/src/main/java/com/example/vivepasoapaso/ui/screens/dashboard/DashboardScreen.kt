@@ -29,25 +29,18 @@ import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import com.example.vivepasoapaso.util.ImageManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-<<<<<<< Updated upstream
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.vector.ImageVector
-=======
->>>>>>> Stashed changes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToProgress: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-<<<<<<< Updated upstream
-    onNavigateToRegisterHabit: () -> Unit = {}
-=======
     onNavigateToRegisterHabit: () -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel()
->>>>>>> Stashed changes
 ) {
     val context = LocalContext.current
     val auth = Firebase.auth

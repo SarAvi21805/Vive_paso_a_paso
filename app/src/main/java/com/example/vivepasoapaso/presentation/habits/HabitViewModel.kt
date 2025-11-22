@@ -13,48 +13,77 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
-import com.google.firebase.Timestamp
 
-<<<<<<< Updated upstream
-class HabitViewModel @Inject constructor(private val habitRepository: HabitRepository) : ViewModel() {
-=======
 @HiltViewModel
 class HabitViewModel @Inject constructor(
     private val habitRepository: HabitRepository
 ) : ViewModel() {
->>>>>>> Stashed changes
 
-    private val _state = MutableStateFlow(HabitState())
-    val state: StateFlow<HabitState> = _state.asStateFlow()
+    private val _habitRecords = MutableStateFlow<List<HabitRecord>>(emptyList())
+    val habitRecords: StateFlow<List<HabitRecord>> = _habitRecords.asStateFlow()
 
-    // Hacer estos métodos públicos
-    fun saveHabitRecord(record: HabitRecord) {
-        _state.value = _state.value.copy(isLoading = true, error = null)
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    // Cargar registros de hábitos
+    fun loadHabitRecords(userId: String, startDate: Date, endDate: Date) {
         viewModelScope.launch {
-            val result = habitRepository.saveHabitRecord(record)
-            _state.value = when {
-                result.isSuccess -> {
-                    // Disparar actualización
-                    HabitState(
-                        isLoading = false,
-                        isSuccess = true,
-                        refreshTrigger = _state.value.refreshTrigger + 1
-                    )
-                }
-                else -> {
-                    HabitState(
-                        isLoading = false,
-                        error = result.exceptionOrNull()?.message ?: "Error al guardar el hábito"
-                    )
-                }
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val records = habitRepository.getHabitRecords(userId, startDate, endDate)
+                _habitRecords.value = records
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cargar los registros: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
-
-            // Actualizar registros del día
-            record.userId?.let { loadTodayHabits(it) }
         }
     }
 
+    // Cargar registros de hoy
+    fun loadTodayHabitRecords(userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val records = habitRepository.getTodayHabitRecords(userId)
+                _habitRecords.value = records
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cargar los registros de hoy: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // Guardar un registro de hábito
+    fun saveHabitRecord(habitRecord: HabitRecord) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val result = habitRepository.saveHabitRecord(habitRecord)
+                if (result.isSuccess) {
+                    // Actualizar la lista local
+                    val currentRecords = _habitRecords.value.toMutableList()
+                    currentRecords.add(result.getOrNull() ?: habitRecord)
+                    _habitRecords.value = currentRecords
+                } else {
+                    _errorMessage.value = "Error al guardar el registro"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al guardar: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // Calcular y guardar hábito de comida
     fun calculateAndSaveFoodHabit(
         foodDescription: String,
         userId: String,
@@ -62,70 +91,148 @@ class HabitViewModel @Inject constructor(
         mood: MoodOption,
         date: Date
     ) {
-        _state.value = _state.value.copy(isLoading = true, error = null)
-
         viewModelScope.launch {
-            val calories = habitRepository.getCaloriesForFood(foodDescription)
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                // Calcular calorías usando Edamam API
+                val calories = habitRepository.getCaloriesForFood(foodDescription) ?: 0.0
 
-            if (calories != null && calories > 0) {
                 val record = HabitRecord(
                     userId = userId,
                     type = HabitType.NUTRITION,
                     value = calories,
-                    notes = notes,
+                    unit = "cal",
+                    notes = if (notes.isNotBlank()) {
+                        "Comida: $foodDescription. Notas: $notes"
+                    } else {
+                        "Comida: $foodDescription"
+                    },
                     mood = mood.name,
-                    recordDate = Timestamp(date)
+                    recordDate = com.google.firebase.Timestamp(date)
                 )
-                saveHabitRecord(record)
-            } else {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = "No se pudieron calcular las calorías para '$foodDescription'"
-                )
-            }
-        }
-    }
 
-    fun loadTodayHabits(userId: String) {
-        viewModelScope.launch {
-            try {
-                val todayHabits = habitRepository.getTodayHabitRecords(userId)
-                _state.value = _state.value.copy(todayHabits = todayHabits)
+                val result = habitRepository.saveHabitRecord(record)
+                if (result.isSuccess) {
+                    // Actualizar la lista local
+                    val currentRecords = _habitRecords.value.toMutableList()
+                    currentRecords.add(result.getOrNull() ?: record)
+                    _habitRecords.value = currentRecords
+                } else {
+                    _errorMessage.value = "Error al guardar el registro de comida"
+                }
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    error = "Error al cargar hábitos del día: ${e.message}"
-                )
+                // En caso de error, guardar sin calorías calculadas
+                try {
+                    val fallbackRecord = HabitRecord(
+                        userId = userId,
+                        type = HabitType.NUTRITION,
+                        value = 0.0,
+                        unit = "cal",
+                        notes = if (notes.isNotBlank()) {
+                            "Comida: $foodDescription. Notas: $notes"
+                        } else {
+                            "Comida: $foodDescription"
+                        },
+                        mood = mood.name,
+                        recordDate = com.google.firebase.Timestamp(date)
+                    )
+                    val result = habitRepository.saveHabitRecord(fallbackRecord)
+                    if (result.isSuccess) {
+                        val currentRecords = _habitRecords.value.toMutableList()
+                        currentRecords.add(result.getOrNull() ?: fallbackRecord)
+                        _habitRecords.value = currentRecords
+                    }
+                } catch (fallbackError: Exception) {
+                    _errorMessage.value = "Error al guardar el registro: ${fallbackError.message}"
+                }
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
+    // Eliminar registro de hábito
+    fun deleteHabitRecord(recordId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val result = habitRepository.deleteHabitRecord(recordId)
+                if (result.isSuccess) {
+                    // Remover de la lista local
+                    val currentRecords = _habitRecords.value.toMutableList()
+                    currentRecords.removeAll { it.id == recordId }
+                    _habitRecords.value = currentRecords
+                } else {
+                    _errorMessage.value = "Error al eliminar el registro"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // Obtener estadísticas semanales
     fun loadWeeklyStats(userId: String) {
         viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
             try {
-                val weeklyStats = habitRepository.getWeeklyStats(userId)
-                _state.value = _state.value.copy(weeklyStats = weeklyStats)
+                val stats = habitRepository.getWeeklyStats(userId)
+                // Aquí puedes manejar las estadísticas como necesites
+                // Por ejemplo, emitirlas en otro StateFlow
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    error = "Error al cargar estadísticas semanales: ${e.message}"
-                )
+                _errorMessage.value = "Error al cargar estadísticas: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
-    fun clearError() {
-        _state.value = _state.value.copy(error = null)
+    // Obtener resumen semanal
+    fun loadWeeklySummary(userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val summary = habitRepository.getWeeklySummary(userId)
+                // Aquí puedes manejar el resumen como necesites
+                // Por ejemplo, emitirlo en otro StateFlow
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cargar resumen: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
-    fun resetState() {
-        _state.value = HabitState()
+    // Cargar registros por tipo
+    fun loadHabitRecordsByType(userId: String, type: HabitType, limit: Int = 30) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val records = habitRepository.getHabitRecordsByType(userId, type, limit)
+                _habitRecords.value = records
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cargar registros por tipo: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // Limpiar mensajes de error
+    fun clearError() {
+        _errorMessage.value = null
+    }
+
+    // Limpiar todos los datos
+    fun clearData() {
+        _habitRecords.value = emptyList()
+        _errorMessage.value = null
     }
 }
-
-data class HabitState(
-    val todayHabits: List<HabitRecord> = emptyList(),
-    val weeklyStats: Map<HabitType, Double> = emptyMap(),
-    val isLoading: Boolean = false,
-    val isSuccess: Boolean = false,
-    val error: String? = null,
-    val refreshTrigger: Int = 0
-)

@@ -19,7 +19,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.vivepasoapaso.R
-import com.example.vivepasoapaso.presentation.auth.AuthState
 import com.example.vivepasoapaso.presentation.auth.AuthViewModel
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,13 +42,15 @@ fun SignUpScreen(
 
     // Estados del ViewModel
     val authState by authViewModel.authState.collectAsState()
-    val navigateToDashboard by authViewModel.navigateToDashboard.collectAsState()
+    val errorMessage by authViewModel.errorMessage.collectAsState()
 
     // Manejar éxito de registro
-    LaunchedEffect(navigateToDashboard) {
-        if (navigateToDashboard) {
-            authViewModel.resetNavigation()
-            onNavigateToDashboard()
+    LaunchedEffect(authState) {
+        when (authState) {
+            is com.example.vivepasoapaso.presentation.auth.AuthState.Authenticated -> {
+                onNavigateToDashboard()
+            }
+            else -> {}
         }
     }
 
@@ -138,9 +139,9 @@ fun SignUpScreen(
             }
 
             // Mostrar error del estado
-            if (authState is AuthState.Error) {
+            errorMessage?.let { message ->
                 Text(
-                    text = (authState as AuthState.Error).message,
+                    text = message,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -160,16 +161,16 @@ fun SignUpScreen(
                         password.length < 6 -> passwordError = "La contraseña debe tener al menos 6 caracteres"
                         password != confirmPassword -> passwordError = "Las contraseñas no coinciden"
                         else -> {
-                            authViewModel.signUp(email, password, name)
+                            authViewModel.signUpWithEmail(email, password, name)
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = name.isNotBlank() && email.isNotBlank() &&
                         password.isNotBlank() && confirmPassword.isNotBlank() &&
-                        authState != AuthState.Loading
+                        authState != com.example.vivepasoapaso.presentation.auth.AuthState.Loading
             ) {
-                if (authState == AuthState.Loading) {
+                if (authState == com.example.vivepasoapaso.presentation.auth.AuthState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp

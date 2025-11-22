@@ -1,24 +1,24 @@
 [versions]
-agp = "8.1.2"
-kotlin = "1.9.0"
-kotlin-stdlib = "1.9.0"
-ksp = "1.9.0-1.0.13"
+agp = "8.2.2"
+kotlin = "1.9.22"
+kotlin-stdlib = "1.9.22"
+ksp = "1.9.22-1.0.17"
 coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-lifecycleRuntimeKtx = "2.6.2"
-activityCompose = "1.8.0"
-composeBom = "2023.10.01"
-room = "2.5.2"
-hilt = "2.48"
+lifecycleRuntimeKtx = "2.7.0"
+activityCompose = "1.8.2"
+composeBom = "2024.02.00"  # ✅ ACTUALIZADO
+room = "2.6.1"
+hilt = "2.48.1"  # ✅ ACTUALIZADO
 kotlinx-coroutines = "1.7.3"
-navigation-compose = "2.7.3"
+navigation-compose = "2.7.5"
 retrofit = "2.9.0"
 moshi = "1.15.0"
-okhttp = "4.11.0"
+okhttp = "4.12.0"
 datastore = "1.0.0"
-work = "2.8.1"
+work = "2.9.0"
 
 [libraries]
 # AndroidX Core
@@ -35,6 +35,7 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text" }  # ✅ NUEVA DEPENDENCIA
 
 # Navigation
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
@@ -44,10 +45,10 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
-# Hilt
+# Hilt - ACTUALIZADO a 2.48.1
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
-androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.0.0" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.1.0" }
 
 # Coroutines
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
@@ -57,7 +58,7 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
 moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
-moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
+moshi-kotlin-codegen = { group = "com.google.devtools.ksp", name = "com.squareup.moshi", version.ref = "moshi" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 
 # DataStore
@@ -67,7 +68,7 @@ androidx-datastore-preferences = { group = "androidx.datastore", name = "datasto
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 
 # Firebase
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "32.7.0" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "32.7.1" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 
@@ -87,4 +88,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version = "4.4.0" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }  # ✅ VERSIÓN CORRECTA

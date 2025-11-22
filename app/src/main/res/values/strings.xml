@@ -84,4 +84,14 @@
     <string name="fb_login_protocol_scheme">fbTU_FACEBOOK_APP_ID_AQUI</string>
     <string name="default_web_client_id" translatable="false">TU_WEB_CLIENT_ID_GOOGLE_AQUI</string>
     <string name="notification_channel_description">Notificaciones para recordarte registrar tus hábitos</string>
+
+    <!-- Nuevos strings para autenticación -->
+    <string name="sign_in_with_google">Iniciar sesión con Google</string>
+    <string name="sign_in_with_facebook">Iniciar sesión con Facebook</string>
+    <string name="sign_in_with_apple">Iniciar sesión con Apple</string>
+    <string name="or">o</string>
+    <string name="welcome_back">¡Bienvenido de nuevo!</string>
+    <string name="get_started">Comienza tu viaje saludable</string>
+    <string name="reset_password_success">Correo de restablecimiento enviado</string>
+    <string name="reset_password_error">Error al enviar correo de restablecimiento</string>
 </resources>

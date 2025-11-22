@@ -16,7 +16,11 @@ import com.example.vivepasoapaso.ui.screens.registerhabit.RegisterHabitScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun LifecycleAwareAppNavigation() {
+fun LifecycleAwareAppNavigation(
+    onGoogleSignIn: () -> Unit,
+    onFacebookSignIn: () -> Unit,
+    onAppleSignIn: () -> Unit
+) {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
 
@@ -44,7 +48,10 @@ fun LifecycleAwareAppNavigation() {
                     navController.navigate(Screen.Dashboard.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
-                }
+                },
+                onGoogleSignIn = onGoogleSignIn,
+                onFacebookSignIn = onFacebookSignIn,
+                onAppleSignIn = onAppleSignIn
             )
         }
 
@@ -70,6 +77,7 @@ fun LifecycleAwareAppNavigation() {
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onBackClick = { navController.popBackStack() },
+                onEditProfile = { /* TODO: Implementar edición de perfil */ },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }

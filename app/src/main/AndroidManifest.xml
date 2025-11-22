@@ -15,8 +15,6 @@
     <!-- Permisos de Notificaciones (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-<<<<<<< Updated upstream
-=======
 
     <!-- Permisos de Ubicación para Weather API -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -27,7 +25,6 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-feature android:name="android.hardware.location.network" android:required="false" />
->>>>>>> Stashed changes
 
     <application
         android:name=".VivePasoAPasoApplication"
@@ -39,8 +36,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VivePasoAPaso"
-        tools:targetApi="31"
-        tools:replace="android:allowBackup">
+        tools:targetApi="31">
 
         <!-- Configuración de Facebook Login -->
         <meta-data
@@ -50,7 +46,6 @@
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
 
-        <!-- Actividades de Facebook -->
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -63,7 +58,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="@string/fb_login_protocol_scheme" />
+                <data android:scheme="vive_paso_a_paso" />
             </intent-filter>
         </activity>
 
@@ -87,18 +82,22 @@
             android:theme="@style/Theme.VivePasoAPaso"
             android:configChanges="locale|layoutDirection|orientation|screenSize|screenLayout|smallestScreenSize"
             android:windowSoftInputMode="adjustResize">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Intent Filter para Google Sign In -->
+            <!-- ELIMINA este intent-filter temporalmente hasta que configures Google Sign-In -->
+            <!--
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="@string/default_web_client_id" />
+                <data android:scheme="tu-web-client-id" />
             </intent-filter>
+            -->
+
         </activity>
 
     </application>

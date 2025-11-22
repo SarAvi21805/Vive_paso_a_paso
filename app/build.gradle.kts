@@ -12,7 +12,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
-    kotlin("kapt")
+    alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
 }
 
@@ -60,7 +60,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -79,57 +79,28 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-<<<<<<< Updated upstream
-    implementation("androidx.compose.material:material-icons-extended:1.6.7")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-
-    // HILT (Inyección de Dependencias)
-    implementation("com.google.dagger:hilt-android:2.48")
-    ksp("com.google.dagger:hilt-compiler:2.48")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-=======
-    implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    //implementation(libs.androidx.ui.text)
+    implementation("androidx.compose.ui:ui-text:1.6.0")
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
->>>>>>> Stashed changes
 
-    // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
-    // WorkManager
-    implementation(libs.androidx.work.runtime.ktx)
-
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
-
-    // Hilt
+    // HILT
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
-    implementation(libs.androidx.hilt.navigation.compose)
-    implementation("androidx.hilt:hilt-work:1.0.0")
+    ksp(libs.hilt.compiler)
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     // Coroutines
-    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
-
-    // Networking
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.moshi)
-    implementation(libs.moshi.kotlin)
-    kapt(libs.moshi.kotlin.codegen)
-    implementation(libs.okhttp.logging.interceptor)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
@@ -151,8 +122,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-}
-
-kapt {
-    correctErrorTypes = true
 }

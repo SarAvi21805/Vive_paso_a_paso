@@ -5,59 +5,36 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.vivepasoapaso.R
-import com.example.vivepasoapaso.presentation.screens.progress.ProgressViewModel
+import com.example.vivepasoapaso.ui.screens.dashboard.BottomNavBar
 import com.example.vivepasoapaso.ui.theme.VivePasoAPasoTheme
-<<<<<<< Updated upstream
-import java.text.SimpleDateFormat
-import java.util.*
-import androidx.compose.ui.graphics.Color
-=======
->>>>>>> Stashed changes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressScreen(
     onBackClick: () -> Unit = {}
 ) {
-<<<<<<< Updated upstream
-    val viewModel: ProgressViewModel = viewModel()
-    val state by viewModel.state.collectAsState()
-    val weeklyData by viewModel.weeklyData.collectAsState()
-    val monthlyData by viewModel.monthlyData.collectAsState()
-    val selectedPeriod by viewModel.selectedPeriod.collectAsState()
-    val selectedHabitFilter by viewModel.selectedHabitFilter.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.refreshData()
-    }
-=======
-    val state by viewModel.state.collectAsStateWithLifecycle()
-    val selectedPeriod by viewModel.selectedPeriod.collectAsStateWithLifecycle()
-    val selectedHabitFilter by viewModel.selectedHabitFilter.collectAsStateWithLifecycle()
->>>>>>> Stashed changes
+    // Estados locales para la UI
+    var selectedPeriod by remember { mutableStateOf("Semanal") }
+    var selectedHabitFilter by remember { mutableStateOf("Todos") }
+    var progressData by remember { mutableStateOf(emptyMap<String, Double>()) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(id = R.string.your_progress),
-                        style = MaterialTheme.typography.headlineSmall
+                        text = "Progreso", // Usando texto directo
+                        style = MaterialTheme.typography.headlineMedium
                     )
                 },
                 navigationIcon = {
@@ -66,13 +43,18 @@ fun ProgressScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { viewModel.refreshData() },
-                        enabled = !state.isLoading
-                    ) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Actualizar datos")
+                    IconButton(onClick = { /* TODO: Mostrar filtros */ }) {
+                        Icon(Icons.Default.FilterList, contentDescription = "Filtros")
                     }
                 }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                onNavigateToDashboard = onBackClick,
+                onNavigateToProgress = { /* No needed here */ },
+                onNavigateToProfile = { /* No needed here */ },
+                onNavigateToLogin = { /* No needed here */ }
             )
         }
     ) { paddingValues ->
@@ -80,157 +62,139 @@ fun ProgressScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(dimensionResource(id = R.dimen.padding_medium))
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Cargando tus datos...")
-                    }
-                }
-            } else {
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Selectores de filtro
-                FilterSection(
-                    selectedPeriod = selectedPeriod,
-                    selectedHabitFilter = selectedHabitFilter,
-                    onPeriodSelected = { period -> viewModel.setPeriod(period) },
-                    onHabitSelected = { habit -> viewModel.setHabitFilter(habit) }
-                )
+            // Selector de período
+            PeriodSelector(
+                selectedPeriod = selectedPeriod,
+                onPeriodSelected = { selectedPeriod = it }
+            )
 
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Gráfico simple
-                SimpleProgressChart()
+            // Selector de filtro de hábitos
+            HabitFilterSelector(
+                selectedFilter = selectedHabitFilter,
+                onFilterSelected = { selectedHabitFilter = it }
+            )
 
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Recomendación de IA
-                SimpleAIRecommendationCard(
-                    recommendation = state.aiRecommendation,
-                    isLoading = state.isLoading,
-                    onRefresh = { viewModel.processIntent(com.example.vivepasoapaso.presentation.screens.progress.ProgressIntent.RequestRecommendation) }
-                )
+            // Estadísticas principales
+            ProgressStats(progressData = progressData)
 
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_large)))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Tarjeta de racha
-                StreakCard(streakDays = state.streakDays)
+            // Gráficos de progreso
+            ProgressCharts(progressData = progressData)
 
-                Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Estadísticas
-                SimpleStatsGrid(state = state)
-            }
+            // Insights y recomendaciones
+            ProgressInsights()
         }
     }
 }
 
-@Composable
-fun FilterSection(
-    selectedPeriod: String,
-    selectedHabitFilter: String,
-    onPeriodSelected: (String) -> Unit,
-    onHabitSelected: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_small))
-    ) {
-        // Selector de período
-        PeriodSelector(
-            selectedPeriod = selectedPeriod,
-            onPeriodSelected = onPeriodSelected,
-            modifier = Modifier.weight(1f)
-        )
-
-        // Selector de hábitos
-        HabitFilterSelector(
-            selectedHabit = selectedHabitFilter,
-            onHabitSelected = onHabitSelected,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PeriodSelector(
     selectedPeriod: String,
-    onPeriodSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    onPeriodSelected: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val periods = listOf(
-        "weekly" to stringResource(id = R.string.weekly),
-        "monthly" to stringResource(id = R.string.monthly)
-    )
+    val periods = listOf("Diario", "Semanal", "Mensual")
 
-    Box(modifier = modifier) {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(periods.first { it.first == selectedPeriod }.second)
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Período",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             periods.forEach { period ->
-                DropdownMenuItem(
-                    text = { Text(period.second) },
-                    onClick = {
-                        onPeriodSelected(period.first)
-                        expanded = false
-                    }
+                FilterChip(
+                    selected = period == selectedPeriod,
+                    onClick = { onPeriodSelected(period) },
+                    label = { Text(period) }
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitFilterSelector(
-    selectedHabit: String,
-    onHabitSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    selectedFilter: String,
+    onFilterSelected: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val habits = listOf(
-        "all" to stringResource(id = R.string.all_habits),
-        "water" to stringResource(id = R.string.hydration),
-        "sleep" to stringResource(id = R.string.sleep),
-        "exercise" to stringResource(id = R.string.exercise),
-        "steps" to stringResource(id = R.string.steps)
-    )
+    val filters = listOf("Todos", "Agua", "Sueño", "Ejercicio", "Alimentación")
 
-    Box(modifier = modifier) {
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Filtrar por hábito",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Usando Row con scroll horizontal en lugar de LazyRow
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(habits.first { it.first == selectedHabit }.second)
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            filters.forEach { filter ->
+                FilterChip(
+                    selected = filter == selectedFilter,
+                    onClick = { onFilterSelected(filter) },
+                    label = { Text(filter) }
+                )
+            }
         }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            habits.forEach { habit ->
-                DropdownMenuItem(
-                    text = { Text(habit.second) },
-                    onClick = {
-                        onHabitSelected(habit.first)
-                        expanded = false
+    }
+}
+
+@Composable
+fun ProgressStats(progressData: Map<String, Double>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Puedes mostrar estadísticas específicas aquí
+        if (progressData.isEmpty()) {
+            Text(
+                text = "No hay datos de progreso disponibles",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        } else {
+            progressData.forEach { (habit, value) ->
+                StatCard(
+                    title = habit,
+                    value = value,
+                    unit = when (habit) {
+                        "Agua" -> "L"
+                        "Sueño" -> "hrs"
+                        "Ejercicio" -> "min"
+                        "Alimentación" -> "cal"
+                        else -> ""
                     }
                 )
             }
@@ -239,188 +203,147 @@ fun HabitFilterSelector(
 }
 
 @Composable
-fun SimpleProgressChart() {
+fun StatCard(title: String, value: Double, unit: String) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .padding(vertical = 4.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column {
                 Text(
-                    text = "Gráfico de Progreso",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Aquí se mostrarán tus estadísticas gráficas")
-                Text("(En desarrollo)")
+                Text(
+                    text = "${String.format("%.1f", value)} $unit",
+                    style = MaterialTheme.typography.headlineSmall
+                )
             }
+            Icon(
+                imageVector = Icons.Default.TrendingUp,
+                contentDescription = "Tendencia",
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
 
 @Composable
-fun SimpleAIRecommendationCard(
-    recommendation: String,
-    isLoading: Boolean,
-    onRefresh: () -> Unit
-) {
+fun ProgressCharts(progressData: Map<String, Double>) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium))
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Recomendación de Vita",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                Icon(
+                    imageVector = Icons.Default.BarChart,
+                    contentDescription = "Gráficos",
+                    modifier = Modifier.size(24.dp)
                 )
-                IconButton(onClick = onRefresh) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Actualizar recomendación"
-                    )
-                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Progreso Visual",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
 
-            Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.padding_small)))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            if (isLoading) {
-                Column {
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.padding_small)))
-                    Text(
-                        text = "Vita está analizando tus hábitos...",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+            // Aquí irían los gráficos reales
+            if (progressData.isEmpty()) {
+                Text(
+                    text = "Los gráficos se mostrarán aquí cuando tengas más datos",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
             } else {
-                Text(
-                    text = recommendation.ifEmpty { "Presiona el botón de actualizar para obtener una recomendación personalizada." },
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Implementación básica de barras de progreso
+                progressData.forEach { (habit, value) ->
+                    ProgressBarItem(
+                        label = habit,
+                        progress = (value / 100.0).toFloat(), // Convertir a Float
+                        value = value
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun StreakCard(streakDays: Int) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun ProgressBarItem(label: String, progress: Float, value: Double) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
         Row(
-            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                imageVector = Icons.Default.LocalFireDepartment,
-                contentDescription = "Streak",
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(40.dp)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = String.format("%.1f", value),
+                style = MaterialTheme.typography.bodyMedium
             )
-            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
-            Column {
-                Text(
-                    text = stringResource(id = R.string.streak_title, streakDays),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(text = stringResource(id = R.string.streak_subtitle))
-            }
         }
-    }
-}
-
-@Composable
-fun SimpleStatsGrid(state: com.example.vivepasoapaso.presentation.screens.progress.ProgressState) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-    ) {
-        SimpleStatCard(
-            title = stringResource(id = R.string.avg_sleep),
-            value = state.weeklySleepAverage,
-            unit = "h",
-            modifier = Modifier.weight(1f)
-        )
-        SimpleStatCard(
-            title = stringResource(id = R.string.total_steps),
-            value = state.totalWeeklySteps.toDouble(),
-            unit = "",
-            modifier = Modifier.weight(1f)
-        )
-    }
-
-    Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.margin_medium)))
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
-    ) {
-        SimpleStatCard(
-            title = stringResource(id = R.string.avg_water),
-            value = state.weeklyWaterAverage,
-            unit = "L",
-            modifier = Modifier.weight(1f)
-        )
-        SimpleStatCard(
-            title = stringResource(id = R.string.avg_exercise),
-            value = state.weeklyExerciseAverage,
-            unit = "min",
-            modifier = Modifier.weight(1f)
+        Spacer(modifier = Modifier.height(4.dp))
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp),
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }
 
 @Composable
-fun SimpleStatCard(
-    title: String,
-    value: Double,
-    unit: String,
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier) {
+fun ProgressInsights() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
         Column(
-            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium))
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "Insights",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
             Text(
-                text = if (unit.isEmpty()) {
-                    "${value.toInt()}"
-                } else {
-                    "%.1f$unit".format(value)
-                },
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                text = "Continúa con tu buen progreso en hidratación. " +
+                        "Intenta mejorar tu consistencia en el ejercicio.",
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = "spec:width=360dp,height=640dp,dpi=480")
 @Composable
 fun ProgressScreenPreview() {
     VivePasoAPasoTheme {
