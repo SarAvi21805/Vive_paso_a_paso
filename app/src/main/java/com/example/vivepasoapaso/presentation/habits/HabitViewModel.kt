@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.vivepasoapaso.data.model.HabitRecord
 import com.example.vivepasoapaso.data.model.HabitType
 import com.example.vivepasoapaso.data.model.MoodOption
-import com.example.vivepasoapaso.data.repository.HabitRepository
+import com.example.vivepasoapaso.data.repository.HabitRepositoryContract
 import com.example.vivepasoapaso.util.LocaleManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +19,7 @@ import com.google.firebase.Timestamp
 import dagger.hilt.android.lifecycle.HiltViewModel
 
 @HiltViewModel
-class HabitViewModel @Inject constructor(private val habitRepository: HabitRepository) : ViewModel() {
+class HabitViewModel @Inject constructor(private val habitRepository: HabitRepositoryContract) : ViewModel() {
 
     private val _habitState = MutableStateFlow<HabitState>(HabitState.Idle)
     val habitState: StateFlow<HabitState> = _habitState.asStateFlow()
@@ -46,7 +46,11 @@ class HabitViewModel @Inject constructor(private val habitRepository: HabitRepos
 
     fun loadTodayRecords(userId: String) {
         viewModelScope.launch {
-            _todayRecords.value = habitRepository.getTodayHabitRecords(userId)
+            try {
+                _todayRecords.value = habitRepository.getTodayHabitRecords(userId)
+            } catch (e: Exception) {
+                _habitState.value = HabitState.Error(e.message ?: "Error al cargar registros")
+            }
         }
     }
 

@@ -24,10 +24,10 @@ class HabitRepository @Inject constructor(
     private val openWeatherApi: OpenWeatherApiService,
     private val habitDao: HabitDao,
     private val firestore: FirebaseFirestore
-) {
+) : HabitRepositoryContract {
 
     // Funciones de API's externas
-    suspend fun getCaloriesForFood(foodQuery: String): Double? {
+    override suspend fun getCaloriesForFood(foodQuery: String): Double? {
         return try {
             val response = edamamApi.getNutritionDetails(
                 appId = BuildConfig.EDAMAM_APP_ID,
@@ -41,7 +41,7 @@ class HabitRepository @Inject constructor(
         }
     }
 
-    suspend fun getCurrentWeather(lat: Double, lon: Double): OpenWeatherResponse? {
+    override suspend fun getCurrentWeather(lat: Double, lon: Double): OpenWeatherResponse? {
         return try {
             openWeatherApi.getWeather(
                 lat = lat,
@@ -60,7 +60,7 @@ class HabitRepository @Inject constructor(
     // Funciones de datos de hábitos
 
     /**Guarda en Firebase y luego en la BD local.*/
-    suspend fun saveHabitRecord(record: HabitRecord): Result<HabitRecord> {
+    override suspend fun saveHabitRecord(record: HabitRecord): Result<HabitRecord> {
         return try {
             val recordWithId = if (record.id.isEmpty()) {
                 record.copy(id = firestore.collection("habits").document().id)
@@ -105,10 +105,10 @@ class HabitRepository @Inject constructor(
         }
     }
 
-    suspend fun getHabitRecordsByType(
+    override suspend fun getHabitRecordsByType(
         userId: String,
         type: HabitType,
-        limit: Int = 30
+        limit: Int
     ): List<HabitRecord> {
         return try {
             val snapshot = firestore.collection("habits")
@@ -138,7 +138,7 @@ class HabitRepository @Inject constructor(
         }
     }
 
-    suspend fun getTodayHabitRecords(userId: String): List<HabitRecord> {
+    override suspend fun getTodayHabitRecords(userId: String): List<HabitRecord> {
         val calendar = Calendar.getInstance()
         val startOfDay = calendar.apply {
             set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
@@ -149,7 +149,7 @@ class HabitRepository @Inject constructor(
         return getHabitRecords(userId, startOfDay, endOfDay)
     }
 
-    suspend fun getWeeklyStats(userId: String): Map<HabitType, Double> {
+    override suspend fun getWeeklyStats(userId: String): Map<HabitType, Double> {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, -7)
         val weekAgo = calendar.time

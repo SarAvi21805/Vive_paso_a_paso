@@ -153,6 +153,17 @@ fun RegisterHabitScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
             ) {
+                val numericValue = if (selectedHabit == HabitOption.FOOD) {
+                    null
+                } else {
+                    parseHabitValue(primaryInputValue)
+                }
+                val canSave = if (selectedHabit == HabitOption.FOOD) {
+                    primaryInputValue.isNotBlank()
+                } else {
+                    numericValue != null
+                }
+
                 Button(
                     onClick = {
                         val userId = "current_user_id" // Reemplazar con ID real del usuario
@@ -169,7 +180,7 @@ fun RegisterHabitScreen(
                             val record = HabitRecord(
                                 userId = userId,
                                 type = HabitType.valueOf(selectedHabit.name),
-                                value = primaryInputValue.toDoubleOrNull() ?: 0.0,
+                                value = numericValue ?: return@Button,
                                 notes = notesValue,
                                 mood = selectedMood.name,
                                 recordDate = Timestamp(selectedDate)
@@ -179,7 +190,7 @@ fun RegisterHabitScreen(
                         onBackClick()
                     },
                     modifier = Modifier.weight(1f),
-                    enabled = primaryInputValue.isNotBlank()
+                    enabled = canSave
                 ) {
                     Text(text = stringResource(id = R.string.save_button))
                 }
